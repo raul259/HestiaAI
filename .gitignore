@@ -1,0 +1,30 @@
+# Dependencias
+node_modules/
+
+# Next.js
+.next/
+out/
+build/
+
+# Variables de entorno — NUNCA subir al repositorio
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Prisma (cliente generado)
+prisma/generated/
+
+# Misc
+.vercel
