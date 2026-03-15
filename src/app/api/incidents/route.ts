@@ -90,6 +90,23 @@ export async function POST(req: NextRequest) {
   }
 }
 
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "ID requerido." }, { status: 400 });
+    }
+
+    await prisma.incident.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("[INCIDENTS DELETE]", error);
+    return NextResponse.json({ error: "Error al eliminar incidencia." }, { status: 500 });
+  }
+}
+
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { AlertCircle, Wifi, WifiOff } from "lucide-react";
+import { AlertCircle, Wifi, WifiOff, Trash2 } from "lucide-react";
 import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
 
 interface IncidentRow {
@@ -40,6 +40,11 @@ export default function RealtimeIncidents({ initialIncidents, propertyNames }: P
     setIncidents((prev) =>
       prev.map((i) => (i.id === id ? { ...i, status } : i))
     );
+  };
+
+  const deleteIncident = async (id: string) => {
+    await fetch(`/api/incidents?id=${id}`, { method: "DELETE" });
+    setIncidents((prev) => prev.filter((i) => i.id !== id));
   };
 
   useEffect(() => {
@@ -195,6 +200,15 @@ export default function RealtimeIncidents({ initialIncidents, propertyNames }: P
                       className="text-xs font-inter text-green-600 bg-green-50 border border-green-200 rounded-lg px-3 py-1 hover:bg-green-100 transition-colors"
                     >
                       Resolver
+                    </button>
+                  )}
+                  {(incident.status === "resolved" || incident.status === "closed") && (
+                    <button
+                      onClick={() => deleteIncident(incident.id)}
+                      className="text-xs font-inter text-red-500 bg-red-50 border border-red-200 rounded-lg px-2 py-1 hover:bg-red-100 transition-colors flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Eliminar
                     </button>
                   )}
                 </div>

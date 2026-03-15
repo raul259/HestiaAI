@@ -36,16 +36,16 @@ export default function Navbar() {
             Cómo funciona
           </Link>
           <Link
-            href="/host"
+            href="/auth/login"
             className="text-sm font-inter text-white/70 hover:text-electric-mint transition-colors"
           >
-            Para anfitriones
+            Iniciar sesión
           </Link>
           <Link
-            href="/guest/demo"
+            href="/auth/register"
             className="btn-accent text-sm py-2 px-5"
           >
-            Ver demo
+            Empezar gratis
           </Link>
         </div>
 
@@ -74,14 +74,14 @@ export default function Navbar() {
             Cómo funciona
           </Link>
           <Link
-            href="/host"
+            href="/auth/login"
             className="text-sm font-inter text-white/70"
             onClick={() => setOpen(false)}
           >
-            Para anfitriones
+            Iniciar sesión
           </Link>
-          <Link href="/guest/demo" className="btn-accent text-sm py-2 text-center">
-            Ver demo
+          <Link href="/auth/register" className="btn-accent text-sm py-2 text-center" onClick={() => setOpen(false)}>
+            Empezar gratis
           </Link>
         </div>
       )}

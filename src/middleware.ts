@@ -31,13 +31,6 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Página raíz: redirigir según sesión
-  if (pathname === "/") {
-    const url = request.nextUrl.clone();
-    url.pathname = user ? "/host/dashboard" : "/auth/login";
-    return NextResponse.redirect(url);
-  }
-
   // Rutas /host/* requieren autenticación
   if (!user && pathname.startsWith("/host")) {
     const url = request.nextUrl.clone();
@@ -56,5 +49,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/host/:path*", "/auth/:path*"],
+  matcher: ["/host/:path*", "/auth/:path*"],
 };

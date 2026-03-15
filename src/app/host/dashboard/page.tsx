@@ -27,7 +27,7 @@ export default async function DashboardPage() {
     }),
   ]);
 
-  const openIncidents = incidents.filter((i) => i.status === "open").length;
+  const openIncidents = incidents.filter((i) => i.status === "open" || i.status === "in_progress").length;
   const totalAppliances = properties.reduce(
     (acc, p) => acc + p._count.appliances,
     0
