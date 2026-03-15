@@ -10,6 +10,7 @@ async function main() {
     update: {},
     create: {
       id: "demo",
+      hostId: "demo-host",
       name: "Villa Mediterránea",
       address: "Calle del Mar, 14, 07001 Palma de Mallorca",
       description:
