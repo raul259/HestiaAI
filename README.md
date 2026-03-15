@@ -1,157 +1,131 @@
-# HestiaAI
+# HestiaAI 🏠
 
-Asistente virtual con inteligencia artificial para huéspedes de alojamientos vacacionales.
-
----
-
-## 📖 Explicación idea del proyecto
-
-Los anfitriones de pisos turísticos reciben decenas de mensajes repetitivos de sus huéspedes: cómo funciona el aire acondicionado, la contraseña del WiFi, a qué hora hay que dejar el piso, dónde tirar la basura... Interrupciones que llegan a cualquier hora y que quitan tiempo y energía.
-
-**HestiaAI resuelve esto con un asistente de IA disponible 24/7.**
-
-El anfitrión configura su propiedad una sola vez: añade los electrodomésticos, sube los manuales en PDF, escribe las instrucciones del piso. El sistema genera un código QR único para ese alojamiento. El huésped escanea el QR al llegar y accede a un chat que responde sus dudas usando la información exacta de esa propiedad, en el idioma que escriba.
-
-Si hay un problema real (avería, accidente), el huésped puede reportar una incidencia directamente desde la misma interfaz. El anfitrión recibe un email inmediato con todos los detalles y puede seguir el estado desde su panel de control en tiempo real.
-
-El nombre viene de **Hestia**, diosa griega del hogar.
+> Asistente virtual con inteligencia artificial para huéspedes de alojamientos vacacionales
 
 ---
 
-## 🎯 Nuestros Objetivos
+## 📖 ¿De qué va el proyecto?
 
-- **Reducir la carga del anfitrión** eliminando las preguntas repetitivas y las llamadas fuera de horario
-- **Mejorar la experiencia del huésped** dándole acceso inmediato a toda la información del alojamiento sin esperar respuesta humana
-- **Centralizar la gestión** de propiedades, electrodomésticos e incidencias en un único panel
-- **Automatizar las comunicaciones** — emails automáticos al anfitrión cuando llega una incidencia, y al huésped cuando se resuelve
-- **Dar visibilidad al huésped** sobre el estado de sus incidencias en tiempo real, sin necesidad de cuenta ni contraseña
-- **Construir una solución escalable** donde un anfitrión puede gestionar múltiples propiedades desde una sola cuenta
+¿Alguna vez has alquilado un piso turístico y no sabías cómo funcionaba el aire acondicionado? ¿O has sido anfitrión y te han llamado a las 2 de la mañana para preguntar la contraseña del WiFi?
+
+**Ese es exactamente el problema que resuelve HestiaAI.**
+
+La idea es simple: el anfitrión configura su piso una sola vez, sube los manuales de los electrodomésticos, y el sistema genera un código QR. El huésped lo escanea al entrar y tiene acceso a un chat que responde cualquier pregunta sobre el alojamiento, las 24 horas, en el idioma que quiera.
+
+Y si hay algún problema real (una avería, por ejemplo), el huésped puede reportarlo directamente desde la misma app. El anfitrión recibe un email con todos los detalles y puede gestionar todo desde su panel.
+
+El nombre viene de **Hestia**, la diosa griega del hogar. Me pareció que pegaba bastante.
 
 ---
 
-## 🌐 Tecnologías Usadas
+## 🎯 ¿Qué queríamos conseguir?
 
-| Capa | Tecnología | Para qué se usa |
+Cuando empecé el proyecto  marqué unos objetivos claros:
+
+- Que el anfitrión **reciba menos interrupciones** — nada de llamadas por tonterías a deshoras
+- Que el huésped **tenga toda la información al momento**, sin esperar que le contesten
+- Que toda la gestión (propiedades, averías, electrodomésticos) esté **en un solo sitio**
+- Que las comunicaciones sean **automáticas** — email al anfitrión cuando hay una incidencia, email al huésped cuando se resuelve
+- Que el huésped pueda **ver el estado de su incidencia en tiempo real**, sin necesidad de crearse una cuenta
+- Que el sistema funcione para **varios pisos a la vez** desde una sola cuenta de anfitrión
+
+---
+
+## 🌐 ¿Qué tecnologías usamos?
+
+Intenté elegir herramientas modernas pero que tuvieran sentido para el tamaño del proyecto:
+
+| Qué | Con qué | Por qué lo elegí |
 |---|---|---|
-| Framework | Next.js 14 (App Router) | Frontend + backend en un solo proyecto. SSR, rutas API integradas |
-| Estilos | Tailwind CSS | Diseño responsive sin CSS manual |
-| Base de datos | PostgreSQL (Supabase) | Base de datos relacional en la nube, gratuita |
-| ORM | Prisma | Acceso a la base de datos con tipado, migraciones automáticas |
-| Inteligencia Artificial | Google Gemini 2.5 Flash | Modelo de lenguaje que responde las preguntas del huésped |
-| Autenticación | Supabase Auth | Login y registro de anfitriones con JWT y cookies seguras |
-| Emails | Resend | Notificaciones automáticas al anfitrión y al huésped |
-| Códigos QR | qrcode (npm) | Genera el QR de cada propiedad, descargable como PNG |
-| Extracción PDF | pdf-parse (npm) | Extrae el texto de los manuales de electrodomésticos en PDF |
-| Tiempo real | Supabase Realtime | Las incidencias aparecen en el panel sin recargar la página |
-| 3D / Landing | Three.js | Escena interactiva en la página de inicio |
-| Lenguaje | TypeScript | Código tipado, menos errores en tiempo de ejecución |
+| La web completa | Next.js 14 | Me permite tener el frontend y el backend en un solo proyecto |
+| El diseño | Tailwind CSS | Rápido de usar, queda bien sin mucho esfuerzo |
+| La base de datos | PostgreSQL en Supabase | Gratuita, en la nube, con autenticación incluida |
+| Acceso a los datos | Prisma | Evita errores, las migraciones son muy fáciles |
+| La inteligencia artificial | Google Gemini 2.5 Flash | Contexto enorme, capa gratuita generosa, responde en cualquier idioma |
+| El login de anfitriones | Supabase Auth | No tuve que implementar nada de seguridad.|
+| Los emails | Resend | Tres líneas de código y funciona |
+| Los códigos QR | librería qrcode | Genera el QR directamente en el navegador, descargable como PNG |
+| Leer manuales PDF | librería pdf-parse | Extrae el texto automáticamente del PDF |
+| Notificaciones en vivo | Supabase Realtime | Las incidencias aparecen en el panel sin recargar |
+| La animación 3D de inicio | Three.js | Le da personalidad a la página de entrada |
+| El lenguaje | TypeScript | Menos bugs, el editor te avisa de los errores |
 
 ---
 
-## 🔗 Funcionalidades Web
+## 🔗 ¿Qué puede hacer la aplicación?
 
-### Panel del anfitrión (`/host`)
-- **Registro y login** con email y contraseña — confirmación por email
-- **Dashboard** con contador de propiedades, incidencias abiertas y electrodomésticos
-- **Incidencias en tiempo real** — aparecen con borde verde y badge "Nueva" sin recargar la página
-- **Gestión de propiedades** — crear, editar y eliminar alojamientos con todos sus datos (WiFi, checkout, emergencias...)
-- **Gestión de electrodomésticos** — añadir aparatos por categoría (TV, aire acondicionado, lavadora...) con su manual
-- **Subida de manuales PDF** — el texto se extrae automáticamente y rellena el campo del manual
-- **Generación de QR** — QR por propiedad con los colores de marca, descargable como PNG
-- **Gestión de incidencias** — cambiar el estado (abierta → en proceso → resuelta), con notificación email al huésped al resolver
+### Lo que ve el anfitrión
 
-### Vista del huésped (`/guest/{propertyId}`)
-Accesible escaneando el QR, sin necesidad de registro.
+Cuando el anfitrión inicia sesión accede a su panel donde puede:
 
-- **Chat con IA** — responde preguntas sobre la propiedad, los electrodomésticos, el WiFi, el checkout... usando los datos exactos del alojamiento
-- **Historial de conversación** — se mantiene durante la sesión en el navegador
-- **Reportar incidencia** — formulario con categoría, prioridad, descripción, datos de contacto opcionales y franja horaria para el técnico
-- **Mis incidencias** — tab con seguimiento en tiempo real del estado de las incidencias reportadas en esa sesión. Se actualiza automáticamente cuando el anfitrión cambia el estado
+- Ver de un vistazo cuántas propiedades tiene, cuántas incidencias están abiertas y cuántos electrodomésticos tiene registrados
+- **Gestionar sus propiedades** — crear, editar o borrar pisos con toda su información (WiFi, instrucciones de salida, contacto de emergencias...)
+- **Añadir electrodomésticos** por categoría y subir el manual en PDF — el texto se extrae solo y se guarda para que la IA lo use
+- **Descargar el QR** de cada propiedad para imprimirlo y colgarlo en el piso
+- **Ver las incidencias en tiempo real** — cuando un huésped reporta algo, aparece en el panel al momento con un borde verde y el aviso "Nueva incidencia", sin recargar la página
+- **Cambiar el estado** de cada incidencia (pendiente → en proceso → resuelta) y borrarlas cuando ya no las necesite
 
-### Notificaciones automáticas
-- Email al **anfitrión** cuando un huésped reporta una incidencia (con todos los detalles y botón al panel)
-- Email al **huésped** cuando el anfitrión marca la incidencia como resuelta (si dejó su email)
+### Lo que ve el huésped
 
----
+El huésped accede escaneando el QR, sin registrarse ni instalar nada:
 
-## Roadmap
+- **Chat con IA** — pregunta lo que quiera sobre el piso y recibe respuestas usando la información exacta de ese alojamiento. Si el anfitrión subió el manual del aire acondicionado, el chat sabe cómo funciona ese modelo concreto
+- **Reportar una incidencia** — puede describir el problema, indicar la urgencia y proponer una franja horaria para que acuda un técnico. También puede dejar su email para recibir actualizaciones
+- **Ver el estado de sus incidencias** — hay un tab "Mis incidencias" donde aparecen todas las que ha reportado en ese dispositivo, con su estado actualizado en tiempo real. Cuando el anfitrión la marca como resuelta, la tarjeta se pone en verde
 
-```
-FASE 1 — Base del proyecto
-[████████████████████████] COMPLETADO
+### Los emails automáticos
 
-FASE 2 — Funcionalidades principales
-[████████████████████████] COMPLETADO
-
-FASE 3 — Funcionalidades avanzadas
-[████████████████░░░░░░░░] EN PROGRESO
-
-FASE 4 — Presentación y entrega
-[░░░░░░░░░░░░░░░░░░░░░░░░] PENDIENTE
-```
-
-### Tabla de tareas
-
-| # | Tarea | Fecha objetivo | Estado |
-|---|---|---|---|
-| 1 | Estructura del proyecto (Next.js + Prisma + Tailwind) | — | ✅ Completado |
-| 2 | Modelos de datos (Property, Appliance, Incident, Conversation) | — | ✅ Completado |
-| 3 | CRUD de propiedades | — | ✅ Completado |
-| 4 | CRUD de electrodomésticos | — | ✅ Completado |
-| 5 | Chat con IA (Gemini) contextualizado por propiedad | — | ✅ Completado |
-| 6 | Migración a PostgreSQL (Supabase) | — | ✅ Completado |
-| 7 | Autenticación de anfitriones (Supabase Auth) | — | ✅ Completado |
-| 8 | Extracción de texto desde PDF | — | ✅ Completado |
-| 9 | Formulario de incidencias con cita para técnico | — | ✅ Completado |
-| 10 | Notificación email al anfitrión al crear incidencia | — | ✅ Completado |
-| 11 | Notificación email al huésped al resolver incidencia | — | ✅ Completado |
-| 12 | Generación de código QR por propiedad | 08/04/2026 | ✅ Completado |
-| 13 | Dashboard en tiempo real (Supabase Realtime) | 16/04/2026 | ✅ Completado |
-| 14 | Seguimiento de incidencias en la vista del huésped | — | ✅ Completado |
-| 15 | Three.js avanzado en la landing (raycasting + hover) | 12/04/2026 | ⏳ Pendiente |
-| 16 | Dashboard de métricas ESG | 26/04/2026 | ⏳ Pendiente |
-| 17 | Despliegue en producción (Vercel) | Antes del 02/05 | ⏳ Pendiente |
-| 18 | Vídeo demo | 02/05/2026 | ⏳ Pendiente |
-| 19 | **Presentación al tribunal** | **04/05/2026** | — |
-| 20 | **Entrega final** | **11/05/2026** | — |
-
-### Diagrama Gantt
-
-```
-                         MAR       ABR            MAY
-Tarea                    15  22  29  05  12  19  26  03  10
-─────────────────────────────────────────────────────────────
-Base + CRUD              ████
-Chat IA + Auth               ████
-PDF + Emails + QR                ████
-Realtime dashboard                   ████
-Three.js avanzado                        ████
-Métricas ESG                                 ████
-Despliegue + Demo                                ████
-Tribunal / Entrega                                   ████
-```
+- Cuando el huésped reporta una incidencia → el anfitrión recibe un email con todos los detalles
+- Cuando el anfitrión resuelve la incidencia → el huésped recibe un email de confirmación (si dejó su correo)
 
 ---
 
-## Instalación local
+## 📅 Roadmap
+
+### Lo que ya está hecho ✅
+
+- Toda la base del proyecto (estructura, base de datos, diseño)
+- Login y registro de anfitriones
+- Gestión completa de propiedades y electrodomésticos
+- Chat con IA contextualizado por propiedad
+- Subida y lectura automática de manuales PDF
+- Formulario de incidencias con cita para técnico
+- Emails automáticos al anfitrión y al huésped
+- Generación de QR descargable por propiedad
+- Dashboard en tiempo real con Supabase Realtime
+- Tab de seguimiento de incidencias para el huésped
+
+### Lo que queda por hacer ⏳
+
+| Tarea | Fecha |
+|---|---|
+| Mejorar la animación 3D de la landing (Three.js) | 12/04/2026 |
+| Dashboard de métricas y sostenibilidad (ESG) | 26/04/2026 |
+| Despliegue en producción (Vercel) | Antes del 02/05 |
+| Grabar el vídeo demo | 02/05/2026 |
+| **Presentación al tribunal** | **04/05/2026** |
+| **Entrega final** | **11/05/2026** |
+
+---
+
+## ⚙️ Cómo probarlo en local
 
 ```bash
-# 1. Clonar el repositorio
+# Clonar el proyecto
 git clone https://github.com/raul259/HestiaAI.git
 cd HestiaAI
 
-# 2. Instalar dependencias
+# Instalar dependencias
 npm install
 
-# 3. Copiar las variables de entorno
+# Copiar las variables de entorno y rellenarlas
 cp .env.example .env
-# Rellenar .env con tus credenciales de Supabase, Gemini y Resend
 
-# 4. Generar el cliente Prisma y aplicar el schema
+# Preparar la base de datos
 npx prisma db push
 
-# 5. Arrancar en desarrollo
+# Arrancar
 npm run dev
 ```
 
-Abre [http://localhost:3000](http://localhost:3000) en el navegador.
+Abre [http://localhost:3000](http://localhost:3000) — te redirige al login automáticamente.
