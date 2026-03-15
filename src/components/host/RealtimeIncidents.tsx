@@ -30,6 +30,7 @@ export default function RealtimeIncidents({ initialIncidents, propertyNames }: P
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
 
   const propertyIds = Object.keys(propertyNames);
+  const propertyIdsKey = propertyIds.join(",");
 
   const updateStatus = async (id: string, status: string) => {
     await fetch("/api/incidents", {
@@ -108,7 +109,8 @@ export default function RealtimeIncidents({ initialIncidents, propertyNames }: P
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [propertyIds.join(",")]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertyIdsKey]);
 
   return (
     <div>
