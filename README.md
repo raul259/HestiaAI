@@ -14,7 +14,7 @@ La idea es simple: el anfitrión configura su piso una sola vez, sube los manual
 
 Y si hay algún problema real (una avería, por ejemplo), el huésped puede reportarlo directamente desde la misma app. El anfitrión recibe un email con todos los detalles y puede gestionar todo desde su panel.
 
-El nombre viene de **Hestia**, la diosa griega del hogar. Me pareció que pegaba bastante.
+El nombre viene de **Hestia**, la diosa griega del hogar y el fuego del hogar. Me pareció que pegaba bastante.
 
 ---
 
