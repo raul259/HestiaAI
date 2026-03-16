@@ -23,58 +23,61 @@ export default function HomePage() {
     <div className="min-h-screen bg-off-white">
       <Navbar />
 
-      <section className="gradient-hero min-h-screen flex items-center pt-16">
-        <div className="max-w-7xl mx-auto px-6 py-20 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div className="space-y-8">
-            <div className="inline-flex items-center gap-2 bg-white/10 border border-electric-mint/30 rounded-full px-4 py-2">
-              <span className="w-2 h-2 bg-electric-mint rounded-full animate-pulse" />
-              <span className="text-sm font-inter text-electric-mint">
-                Asistente IA para alojamientos vacacionales
-              </span>
-            </div>
+      <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">
+        {/* Escena 3D como fondo completo */}
+        <div className="absolute inset-0 z-0">
+          <HeroScene />
+        </div>
 
-            <h1 className="font-outfit font-bold text-5xl lg:text-6xl text-off-white leading-tight">
-              Tu conserje virtual,{" "}
-              <span className="text-electric-mint">siempre disponible</span>
-            </h1>
+        {/* Overlay para legibilidad del texto */}
+        <div className="absolute inset-0 z-10 bg-deep-forest/40" />
 
-            <p className="font-inter text-lg text-white/70 leading-relaxed max-w-xl">
-              Hestia-AI resuelve al instante cualquier duda o incidencia de tus
-              huéspedes usando inteligencia artificial contextualizada con los
-              datos exactos de tu propiedad.
-            </p>
-
-            <div className="flex flex-wrap gap-4">
-              <Link href="/guest/demo" className="btn-accent flex items-center gap-2">
-                Probar como huésped
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link href="/host" className="btn-outline text-off-white border-white/40 hover:bg-white hover:text-deep-forest">
-                Soy anfitrión
-              </Link>
-            </div>
-
-            <div className="flex flex-wrap gap-6 pt-4">
-              {stats.map((stat, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-electric-mint/15 rounded-lg flex items-center justify-center text-electric-mint">
-                    {stat.icon}
-                  </div>
-                  <div>
-                    <div className="font-outfit font-bold text-xl text-off-white">
-                      {stat.value}
-                    </div>
-                    <div className="font-inter text-xs text-white/50">
-                      {stat.label}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+        {/* Contenido centrado sobre la escena */}
+        <div className="relative z-20 w-full max-w-3xl mx-auto px-6 py-20 text-center space-y-8">
+          <div className="inline-flex items-center gap-2 bg-white/10 border border-electric-mint/30 rounded-full px-4 py-2">
+            <span className="w-2 h-2 bg-electric-mint rounded-full animate-pulse" />
+            <span className="text-sm font-inter text-electric-mint">
+              Asistente IA para alojamientos vacacionales
+            </span>
           </div>
 
-          <div className="h-[500px] lg:h-[600px] rounded-3xl overflow-hidden shadow-2xl shadow-black/30 border border-white/10">
-            <HeroScene />
+          <h1 className="font-outfit font-bold text-5xl lg:text-7xl text-off-white leading-tight">
+            Tu conserje virtual,{" "}
+            <span className="text-electric-mint">siempre disponible</span>
+          </h1>
+
+          <p className="font-inter text-lg text-white/70 leading-relaxed max-w-2xl mx-auto">
+            Hestia-AI resuelve al instante cualquier duda o incidencia de tus
+            huéspedes usando inteligencia artificial contextualizada con los
+            datos exactos de tu propiedad.
+          </p>
+
+          <div className="flex flex-wrap gap-4 justify-center">
+            <Link href="/auth/register" className="btn-accent flex items-center gap-2">
+              Empezar gratis
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link href="/auth/login" className="btn-outline text-off-white border-white/40 hover:bg-white hover:text-deep-forest">
+              Iniciar sesión
+            </Link>
+          </div>
+
+          <div className="flex flex-wrap gap-8 justify-center pt-4">
+            {stats.map((stat, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-electric-mint/15 rounded-lg flex items-center justify-center text-electric-mint">
+                  {stat.icon}
+                </div>
+                <div className="text-left">
+                  <div className="font-outfit font-bold text-xl text-off-white">
+                    {stat.value}
+                  </div>
+                  <div className="font-inter text-xs text-white/50">
+                    {stat.label}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
