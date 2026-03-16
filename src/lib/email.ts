@@ -1,7 +1,5 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 interface IncidentEmailParams {
   hostEmail: string;
   hostName: string;
@@ -32,6 +30,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export async function enviarEmailIncidencia(params: IncidentEmailParams) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const {
     hostEmail,
     hostName,
@@ -163,6 +162,7 @@ interface GuestResolvedEmailParams {
 }
 
 export async function enviarEmailResolucion(params: GuestResolvedEmailParams) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const { guestEmail, guestName, propertyName, incidentTitle, hostName } = params;
 
   const html = `
