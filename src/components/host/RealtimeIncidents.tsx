@@ -80,7 +80,7 @@ export default function RealtimeIncidents({ initialIncidents, propertyNames }: P
           setIncidents((prev) => [newIncident, ...prev].slice(0, 10));
 
           // Resaltar en verde durante 6 segundos
-          setNewIds((prev) => new Set([...prev, newIncident.id]));
+          setNewIds((prev) => new Set([...Array.from(prev), newIncident.id]));
           setTimeout(() => {
             setNewIds((prev) => {
               const next = new Set(prev);

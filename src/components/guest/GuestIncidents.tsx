@@ -89,7 +89,7 @@ export default function GuestIncidents({ propertyId }: Props) {
 
           // Destacar brevemente si pasa a "resolved"
           if (newStatus === "resolved") {
-            setResolvedIds((prev) => new Set([...prev, raw.id as string]));
+            setResolvedIds((prev) => new Set([...Array.from(prev), raw.id as string]));
             setTimeout(() => {
               setResolvedIds((prev) => {
                 const next = new Set(prev);
