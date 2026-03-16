@@ -23,7 +23,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-off-white">
       <Navbar />
 
-      <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">
+      <section className="gradient-hero relative min-h-screen flex items-center pt-16 overflow-hidden">
         {/* Escena 3D como fondo completo */}
         <div className="absolute inset-0 z-0">
           <HeroScene />
