@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Wifi, LogOut, Trash2, Phone, Home, Bot, ClipboardList } from "lucide-react";
+import { Wifi, LogOut, Trash2, Phone, Home, Bot, ClipboardList, Box } from "lucide-react";
 import ChatInterface from "@/components/guest/ChatInterface";
 import IncidentForm from "@/components/guest/IncidentForm";
 import GuestIncidents from "@/components/guest/GuestIncidents";
-import { Property } from "@/types";
+import ApplianceModal from "@/components/guest/ApplianceModal";
+import { Property, Appliance } from "@/types";
 
 function generateSessionId() {
   return `session_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
@@ -41,6 +42,7 @@ export default function GuestPage({
   const [sessionId] = useState(getOrCreateSession);
   const [activeTab, setActiveTab] = useState<"chat" | "info" | "incidencias">("chat");
   const [incidentCount, setIncidentCount] = useState(0);
+  const [selectedAppliance, setSelectedAppliance] = useState<Appliance | null>(null);
 
   // Leer conteo de incidencias del localStorage al montar
   useEffect(() => {
@@ -193,20 +195,21 @@ export default function GuestPage({
       </div>
 
       <div className="flex-1 overflow-hidden">
-        {activeTab === "chat" ? (
-          <div className="h-full" style={{ height: "calc(100vh - 140px)" }}>
-            <ChatInterface
-              propertyId={propertyId}
-              sessionId={sessionId}
-              onIncidentRequest={() => setShowIncident(true)}
-            />
-          </div>
-        ) : activeTab === "incidencias" ? (
-          <div className="overflow-y-auto" style={{ height: "calc(100vh - 140px)" }}>
-            <GuestIncidents propertyId={propertyId} />
-          </div>
-        ) : (
-          <div className="p-4 space-y-4 overflow-y-auto" style={{ height: "calc(100vh - 140px)" }}>
+        {/* Chat — siempre montado para no perder la conversación */}
+        <div className={activeTab === "chat" ? "h-full" : "hidden"} style={{ height: "calc(100vh - 140px)" }}>
+          <ChatInterface
+            propertyId={propertyId}
+            sessionId={sessionId}
+            onIncidentRequest={() => setShowIncident(true)}
+          />
+        </div>
+
+        <div className={activeTab === "incidencias" ? "overflow-y-auto" : "hidden"} style={{ height: "calc(100vh - 140px)" }}>
+          <GuestIncidents propertyId={propertyId} />
+        </div>
+
+        <div className={activeTab === "info" ? "p-4 space-y-4 overflow-y-auto" : "hidden"} style={{ height: "calc(100vh - 140px)" }}>
+          <div>
             {property.description && (
               <div className="card">
                 <h3 className="font-outfit font-semibold text-deep-forest mb-2 text-base">
@@ -238,6 +241,41 @@ export default function GuestPage({
               </div>
             ))}
 
+            {/* Electrodomésticos */}
+            {property.appliances && property.appliances.length > 0 && (
+              <div className="card">
+                <h3 className="font-outfit font-semibold text-deep-forest mb-3 text-base flex items-center gap-2">
+                  <Box className="w-4 h-4 text-electric-mint" />
+                  Electrodomésticos
+                </h3>
+                <div className="space-y-2">
+                  {property.appliances.map((appliance) => (
+                    <div
+                      key={appliance.id}
+                      className="flex items-center justify-between gap-3 py-2 border-b border-gray-100 last:border-0"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-inter font-medium text-sm text-deep-forest truncate">
+                          {appliance.name}
+                        </p>
+                        <p className="font-inter text-xs text-slate-body">
+                          {appliance.category}
+                          {appliance.location ? ` · ${appliance.location}` : ""}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setSelectedAppliance(appliance)}
+                        className="flex-shrink-0 flex items-center gap-1.5 text-xs font-inter font-medium text-electric-mint bg-electric-mint/10 hover:bg-electric-mint/20 border border-electric-mint/30 px-3 py-1.5 rounded-full transition-colors"
+                      >
+                        <Box className="w-3 h-3" />
+                        Ver 3D
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <button
               onClick={() => setShowIncident(true)}
               className="w-full btn-outline text-sm py-3 flex items-center justify-center gap-2"
@@ -245,7 +283,7 @@ export default function GuestPage({
               Reportar una incidencia
             </button>
           </div>
-        )}
+        </div>
       </div>
 
       {showIncident && (
@@ -257,6 +295,13 @@ export default function GuestPage({
             setShowIncident(false);
             setActiveTab("incidencias");
           }}
+        />
+      )}
+
+      {selectedAppliance && (
+        <ApplianceModal
+          appliance={selectedAppliance}
+          onClose={() => setSelectedAppliance(null)}
         />
       )}
     </div>

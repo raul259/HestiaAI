@@ -45,6 +45,26 @@ export function getStatusColor(status: string) {
   }
 }
 
+export function getStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    open: "Abierta",
+    in_progress: "En proceso",
+    resolved: "Resuelta",
+    closed: "Cerrada",
+  };
+  return labels[status] ?? status;
+}
+
+export function getPriorityLabel(priority: string) {
+  const labels: Record<string, string> = {
+    low: "Baja",
+    medium: "Media",
+    high: "Alta",
+    urgent: "Urgente",
+  };
+  return labels[priority] ?? priority;
+}
+
 export function getCategoryIcon(category: string) {
   const icons: Record<string, string> = {
     tv: "📺",

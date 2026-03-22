@@ -26,7 +26,7 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-24 gradient-hero">
+    <section id="how-it-works" className="py-24">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
           <span className="inline-block text-electric-mint bg-white/10 border border-electric-mint/30 text-sm font-inter font-medium px-4 py-1.5 rounded-full mb-4">

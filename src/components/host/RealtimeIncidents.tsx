@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { AlertCircle, Wifi, WifiOff, Trash2 } from "lucide-react";
-import { formatDate, getPriorityColor, getStatusColor } from "@/lib/utils";
+import { AlertCircle, Wifi, WifiOff, Trash2, Loader2 } from "lucide-react";
+import { formatDate, getPriorityColor, getStatusColor, getPriorityLabel, getStatusLabel } from "@/lib/utils";
 
 interface IncidentRow {
   id: string;
@@ -28,19 +28,25 @@ export default function RealtimeIncidents({ initialIncidents, propertyNames }: P
   const [incidents, setIncidents] = useState<IncidentRow[]>(initialIncidents);
   const [connected, setConnected] = useState(false);
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const propertyIds = Object.keys(propertyNames);
   const propertyIdsKey = propertyIds.join(",");
 
   const updateStatus = async (id: string, status: string) => {
-    await fetch("/api/incidents", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, status }),
-    });
-    setIncidents((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, status } : i))
-    );
+    setUpdatingId(id);
+    try {
+      await fetch("/api/incidents", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status }),
+      });
+      setIncidents((prev) =>
+        prev.map((i) => (i.id === id ? { ...i, status } : i))
+      );
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   const deleteIncident = async (id: string) => {
@@ -175,10 +181,10 @@ export default function RealtimeIncidents({ initialIncidents, propertyNames }: P
                 </div>
                 <div className="flex gap-1.5 flex-shrink-0">
                   <span className={`badge text-xs ${getPriorityColor(incident.priority)}`}>
-                    {incident.priority}
+                    {getPriorityLabel(incident.priority)}
                   </span>
                   <span className={`badge text-xs ${getStatusColor(incident.status)}`}>
-                    {incident.status}
+                    {getStatusLabel(incident.status)}
                   </span>
                 </div>
               </div>
@@ -199,8 +205,10 @@ export default function RealtimeIncidents({ initialIncidents, propertyNames }: P
                   {(incident.status === "open" || incident.status === "in_progress") && (
                     <button
                       onClick={() => updateStatus(incident.id, "resolved")}
-                      className="text-xs font-inter text-green-600 bg-green-50 border border-green-200 rounded-lg px-3 py-1 hover:bg-green-100 transition-colors"
+                      disabled={updatingId === incident.id}
+                      className="text-xs font-inter text-green-600 bg-green-50 border border-green-200 rounded-lg px-3 py-1 hover:bg-green-100 transition-colors disabled:opacity-50 flex items-center gap-1"
                     >
+                      {updatingId === incident.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                       Resolver
                     </button>
                   )}

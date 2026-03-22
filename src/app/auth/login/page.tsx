@@ -44,6 +44,12 @@ export default function LoginPage() {
       {/* Tarjeta de login */}
       <div className="relative z-20 w-full max-w-md">
         <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-electric-mint/70 hover:text-electric-mint border border-electric-mint/20 hover:border-electric-mint/50 bg-electric-mint/5 hover:bg-electric-mint/10 text-sm mb-4 px-3 py-1.5 rounded-full transition-all">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Volver al inicio
+          </Link>
           <h1 className="text-3xl font-bold text-off-white font-['Outfit']">
             Hestia<span className="text-electric-mint">AI</span>
           </h1>

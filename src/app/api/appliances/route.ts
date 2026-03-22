@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { indexAppliance } from "@/lib/rag";
 
 export async function GET(req: NextRequest) {
   try {
@@ -33,6 +34,11 @@ export async function POST(req: NextRequest) {
     const appliance = await prisma.appliance.create({
       data: { propertyId, name, model, category, manual, location },
     });
+
+    // Indexar el manual en chunks con embeddings para RAG (sin bloquear la respuesta)
+    indexAppliance(appliance.id, name, manual).catch((err) =>
+      console.error("[RAG] Error indexando manual:", err)
+    );
 
     return NextResponse.json(appliance, { status: 201 });
   } catch (error) {

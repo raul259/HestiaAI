@@ -1,6 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { enviarEmailIncidencia, enviarEmailResolucion } from "@/lib/email";
+import { ai } from "@/lib/gemini";
+
+const VALID_CATEGORIES = ["electricity", "water", "wifi", "appliance", "access", "other"];
+const VALID_PRIORITIES = ["low", "medium", "high", "urgent"];
+
+async function inferCategoryAndPriority(
+  title: string,
+  description: string
+): Promise<{ category: string; priority: string }> {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      config: {
+        systemInstruction: `Eres un clasificador de incidencias para alojamientos vacacionales.
+Dado el título y descripción de una incidencia, devuelve ÚNICAMENTE un JSON con dos campos:
+- "category": una de estas opciones exactas: electricity, water, wifi, appliance, access, other
+- "priority": una de estas opciones exactas: low, medium, high, urgent
+
+Criterios de prioridad:
+- urgent: emergencias (inundación, incendio, sin luz en toda la casa, no pueden entrar)
+- high: afecta al confort básico (aire acondicionado roto en verano, ducha sin agua caliente)
+- medium: molestia notable pero manejable
+- low: problema menor, no urgente
+
+Responde SOLO con el JSON, sin explicaciones.`,
+        temperature: 0,
+        maxOutputTokens: 60,
+      },
+      contents: [{ role: "user", parts: [{ text: `Título: ${title}\nDescripción: ${description}` }] }],
+    });
+
+    const text = (response.text ?? "").trim().replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(text);
+
+    return {
+      category: VALID_CATEGORIES.includes(parsed.category) ? parsed.category : "other",
+      priority: VALID_PRIORITIES.includes(parsed.priority) ? parsed.priority : "medium",
+    };
+  } catch {
+    return { category: "other", priority: "medium" };
+  }
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -41,12 +83,17 @@ export async function POST(req: NextRequest) {
       scheduledAt,
     } = body;
 
-    if (!propertyId || !title || !description || !category) {
+    if (!propertyId || !title || !description) {
       return NextResponse.json(
-        { error: "propertyId, título, descripción y categoría son obligatorios." },
+        { error: "propertyId, título y descripción son obligatorios." },
         { status: 400 }
       );
     }
+
+    // Inferir categoría y prioridad automáticamente con IA
+    const inferred = await inferCategoryAndPriority(title, description);
+    const finalCategory = inferred.category;
+    const finalPriority = priority ?? inferred.priority;
 
     // Obtener datos de la propiedad para el email
     const property = await prisma.property.findUnique({
@@ -59,8 +106,8 @@ export async function POST(req: NextRequest) {
         propertyId,
         title,
         description,
-        category,
-        priority: priority ?? "medium",
+        category: finalCategory,
+        priority: finalPriority,
         guestName,
         guestEmail,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
@@ -75,8 +122,8 @@ export async function POST(req: NextRequest) {
         propertyName: property.name,
         incidentTitle: title,
         incidentDescription: description,
-        category,
-        priority: priority ?? "medium",
+        category: finalCategory,
+        priority: finalPriority,
         guestName,
         guestEmail,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,

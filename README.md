@@ -94,12 +94,14 @@ El huésped accede escaneando el QR, sin registrarse ni instalar nada:
 - Generación de QR descargable por propiedad
 - Dashboard en tiempo real con Supabase Realtime
 - Tab de seguimiento de incidencias para el huésped
+- **Arquitectura RAG** — embeddings semánticos con `text-embedding-004` para recuperar solo los fragmentos de manual más relevantes en cada consulta
 
 ### Lo que queda por hacer ⏳
 
 | Tarea | Fecha |
 |---|---|
 | Mejorar la animación 3D de la landing (Three.js) | 12/04/2026 |
+| Migrar embeddings a base de datos vectorial ([Weaviate](https://weaviate.io)) para escalar a millones de documentos | Futuro |
 | Dashboard de métricas y sostenibilidad (ESG) | 26/04/2026 |
 | Despliegue en producción (Vercel) | Antes del 02/05 |
 | Grabar el vídeo demo | 02/05/2026 |

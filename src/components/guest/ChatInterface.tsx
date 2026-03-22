@@ -12,21 +12,65 @@ interface Props {
   onIncidentRequest: () => void;
 }
 
-const QUICK_QUESTIONS = [
-  "¿Cuál es la contraseña del WiFi?",
-  "¿Cómo enciendo el aire acondicionado?",
-  "¿A qué hora es el check-out?",
-  "¿Dónde tiro la basura?",
-];
+const I18N: Record<string, { greeting: string; questions: string[] }> = {
+  es: {
+    greeting: "¡Hola! Soy **Hestia**, tu asistente virtual para este alojamiento. Estoy aquí para ayudarte con cualquier duda sobre el apartamento, los electrodomésticos o cualquier incidencia. ¿En qué puedo ayudarte?",
+    questions: ["¿Cuál es la contraseña del WiFi?", "¿Cómo enciendo el aire acondicionado?", "¿A qué hora es el check-out?", "¿Dónde tiro la basura?"],
+  },
+  en: {
+    greeting: "Hi! I'm **Hestia**, your virtual assistant for this accommodation. I'm here to help with any questions about the apartment, appliances or any issue you may have. How can I help you?",
+    questions: ["What's the WiFi password?", "How do I turn on the air conditioning?", "What time is check-out?", "Where do I put the rubbish?"],
+  },
+  fr: {
+    greeting: "Bonjour ! Je suis **Hestia**, votre assistant virtuel pour ce logement. Je suis là pour vous aider avec toute question sur l'appartement, les appareils ou tout incident. Comment puis-je vous aider ?",
+    questions: ["Quel est le mot de passe WiFi ?", "Comment allumer la climatisation ?", "À quelle heure est le check-out ?", "Où jeter les ordures ?"],
+  },
+  de: {
+    greeting: "Hallo! Ich bin **Hestia**, Ihr virtueller Assistent für diese Unterkunft. Ich helfe Ihnen gerne bei Fragen zur Wohnung, den Geräten oder bei Problemen. Wie kann ich Ihnen helfen?",
+    questions: ["Was ist das WLAN-Passwort?", "Wie schalte ich die Klimaanlage ein?", "Wann ist der Check-out?", "Wo kommt der Müll hin?"],
+  },
+  it: {
+    greeting: "Ciao! Sono **Hestia**, il tuo assistente virtuale per questo alloggio. Sono qui per aiutarti con qualsiasi domanda sull'appartamento, gli elettrodomestici o qualsiasi problema. Come posso aiutarti?",
+    questions: ["Qual è la password del WiFi?", "Come accendo l'aria condizionata?", "A che ora è il check-out?", "Dove butto la spazzatura?"],
+  },
+  pt: {
+    greeting: "Olá! Sou a **Hestia**, sua assistente virtual para este alojamento. Estou aqui para ajudá-lo com qualquer dúvida sobre o apartamento, eletrodomésticos ou qualquer incidente. Como posso ajudar?",
+    questions: ["Qual é a senha do WiFi?", "Como ligo o ar condicionado?", "A que horas é o check-out?", "Onde coloco o lixo?"],
+  },
+  nl: {
+    greeting: "Hallo! Ik ben **Hestia**, uw virtuele assistent voor dit verblijf. Ik help u graag met vragen over het appartement, apparaten of problemen. Hoe kan ik u helpen?",
+    questions: ["Wat is het WiFi-wachtwoord?", "Hoe zet ik de airconditioning aan?", "Hoe laat is de check-out?", "Waar gooi ik het afval?"],
+  },
+};
+
+function detectLang(): string {
+  if (typeof window === "undefined") return "es";
+  const lang = navigator.language?.slice(0, 2).toLowerCase();
+  return I18N[lang] ? lang : "en";
+}
 
 export default function ChatInterface({ propertyId, sessionId, onIncidentRequest }: Props) {
+  const lang = detectLang();
+  const { greeting, questions } = I18N[lang];
+
   const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      content:
-        "¡Hola! Soy **Hestia**, tu asistente virtual para este alojamiento. Estoy aquí para ayudarte con cualquier duda sobre el apartamento, los electrodomésticos o cualquier incidencia que tengas. ¿En qué puedo ayudarte?",
-    },
+    { role: "assistant", content: greeting },
   ]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+
+  // Recuperar conversación guardada al montar
+  useEffect(() => {
+    fetch(`/api/chat?sessionId=${sessionId}&propertyId=${propertyId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.messages?.length) {
+          setMessages([{ role: "assistant", content: greeting }, ...data.messages]);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setHistoryLoaded(true));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -150,9 +194,9 @@ export default function ChatInterface({ propertyId, sessionId, onIncidentRequest
         <div ref={bottomRef} />
       </div>
 
-      {messages.length === 1 && (
+      {messages.length === 1 && historyLoaded && (
         <div className="px-4 pb-3 flex flex-wrap gap-2">
-          {QUICK_QUESTIONS.map((q, i) => (
+          {questions.map((q, i) => (
             <button
               key={i}
               onClick={() => sendMessage(q)}

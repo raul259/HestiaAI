@@ -29,15 +29,25 @@ model Property {
 }
 
 model Appliance {
-  id         String   @id @default(cuid())
+  id         String        @id @default(cuid())
   propertyId String
   name       String
   model      String?
   category   String
   manual     String
   location   String?
-  createdAt  DateTime @default(now())
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime      @default(now())
+  property   Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  chunks     ManualChunk[]
+}
+
+model ManualChunk {
+  id          String    @id @default(cuid())
+  applianceId String
+  chunkIndex  Int
+  chunkText   String
+  embedding   String    // JSON array de floats (text-embedding-004, 768 dims)
+  appliance   Appliance @relation(fields: [applianceId], references: [id], onDelete: Cascade)
 }
 
 model Incident {

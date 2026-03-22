@@ -1,16 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, AlertTriangle, Loader2, CheckCircle2 } from "lucide-react";
-
-const CATEGORIES = [
-  { value: "electricity", label: "Electricidad / Luz" },
-  { value: "water", label: "Agua / Fontanería" },
-  { value: "wifi", label: "WiFi / Internet" },
-  { value: "appliance", label: "Electrodoméstico" },
-  { value: "access", label: "Acceso / Llaves" },
-  { value: "other", label: "Otro" },
-];
+import { X, AlertTriangle, Loader2, CheckCircle2, Sparkles } from "lucide-react";
 
 const PRIORITIES = [
   { value: "low", label: "Baja — no urgente" },
@@ -29,7 +20,6 @@ export default function IncidentForm({ propertyId, onClose, onIncidentCreated }:
   const [form, setForm] = useState({
     title: "",
     description: "",
-    category: "other",
     priority: "medium",
     guestName: "",
     guestEmail: "",
@@ -147,44 +137,28 @@ export default function IncidentForm({ propertyId, onClose, onIncidentCreated }:
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-inter font-medium text-slate-body mb-1.5">
-                  Categoría
-                </label>
-                <select
-                  value={form.category}
-                  onChange={(e) =>
-                    setForm({ ...form, category: e.target.value })
-                  }
-                  className="input-field"
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="flex items-center gap-2 bg-electric-mint/10 border border-electric-mint/30 rounded-xl px-3 py-2">
+              <Sparkles className="w-4 h-4 text-electric-mint flex-shrink-0" />
+              <p className="text-xs font-inter text-deep-forest">
+                La categoría se detecta automáticamente con IA según tu descripción
+              </p>
+            </div>
 
-              <div>
-                <label className="block text-sm font-inter font-medium text-slate-body mb-1.5">
-                  Urgencia
-                </label>
-                <select
-                  value={form.priority}
-                  onChange={(e) =>
-                    setForm({ ...form, priority: e.target.value })
-                  }
-                  className="input-field"
-                >
-                  {PRIORITIES.map((p) => (
-                    <option key={p.value} value={p.value}>
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <label className="block text-sm font-inter font-medium text-slate-body mb-1.5">
+                Urgencia
+              </label>
+              <select
+                value={form.priority}
+                onChange={(e) => setForm({ ...form, priority: e.target.value })}
+                className="input-field"
+              >
+                {PRIORITIES.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="border-t border-gray-100 pt-4 space-y-4">
@@ -250,7 +224,7 @@ export default function IncidentForm({ propertyId, onClose, onIncidentCreated }:
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Enviando...
+                    Analizando y enviando...
                   </>
                 ) : (
                   "Enviar incidencia"

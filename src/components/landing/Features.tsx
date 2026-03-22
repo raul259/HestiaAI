@@ -32,12 +32,12 @@ export default function Features() {
     <section id="features" className="py-24 bg-off-white">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
-          <span className="inline-block text-electric-mint bg-deep-forest/10 border border-electric-mint/30 text-sm font-inter font-medium px-4 py-1.5 rounded-full mb-4">
+          <span className="inline-block text-deep-forest bg-electric-mint/60 border border-deep-forest/30 text-sm font-inter font-medium px-4 py-1.5 rounded-full mb-4">
             Funcionalidades clave
           </span>
           <h2 className="font-outfit font-bold text-4xl text-deep-forest mb-4">
             Todo lo que tu huésped necesita,<br />
-            <span className="text-electric-mint" style={{ WebkitTextStroke: "1px #1B3022" }}>
+            <span className="text-electric-mint font-bold" style={{ textShadow: "0 0 1px #1B3022, 1px 1px 0px #1B3022, -2px -2px 0px #1B3022, 1px -1px 0px #1B3022, -1px 1px 0px #1B3022" }}>
               al alcance de un mensaje
             </span>
           </h2>

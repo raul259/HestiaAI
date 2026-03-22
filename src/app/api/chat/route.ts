@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ai } from "@/lib/gemini";
+import { findRelevantChunks } from "@/lib/rag";
 import { ChatMessage } from "@/types";
 
-function buildSystemPrompt(property: {
+function buildBasePrompt(property: {
   name: string;
   address: string;
   description?: string | null;
@@ -13,15 +14,7 @@ function buildSystemPrompt(property: {
   wasteInstructions?: string | null;
   emergencyContact?: string | null;
   hostName: string;
-  appliances: { name: string; model?: string | null; category: string; manual: string; location?: string | null }[];
 }): string {
-  const applianceSection = property.appliances
-    .map(
-      (a) =>
-        `## ${a.name}${a.model ? ` (${a.model})` : ""}${a.location ? ` — ubicación: ${a.location}` : ""}\n${a.manual}`
-    )
-    .join("\n\n---\n\n");
-
   return `Eres Hestia, el asistente virtual inteligente del alojamiento "${property.name}".
 Tu misión es ayudar a los huéspedes a resolver cualquier duda o incidencia de forma inmediata, amable y precisa.
 
@@ -42,7 +35,107 @@ ${property.checkoutInstructions ?? "Sin instrucciones especiales."}
 ${property.wasteInstructions ?? "Sin instrucciones especiales."}
 
 ## CONTACTOS DE EMERGENCIA
-${property.emergencyContact ?? "Contactar al anfitrión."}
+${property.emergencyContact ?? "Contactar al anfitrión."}`;
+}
+
+function buildRules(): string {
+  return `## ALCANCE ESTRICTO — QUÉ PUEDES Y NO PUEDES RESPONDER
+
+Eres un asistente EXCLUSIVAMENTE para este alojamiento. Tu único propósito es ayudar al huésped con:
+- Información y funcionamiento del alojamiento (WiFi, check-out, residuos, acceso)
+- Uso e instrucciones de los electrodomésticos de la vivienda
+- Incidencias o averías dentro del alojamiento
+- Dudas logísticas relacionadas con la estancia
+
+NUNCA responderás sobre:
+- Matemáticas, ciencias, idiomas u otras materias académicas
+- Noticias, política, guerras, sucesos de actualidad
+- Fallecimientos, historia o biografías de personas
+- Tecnología general (qué móvil comprar, comparativas, etc.)
+- Entretenimiento, deportes, música, cine
+- Cualquier tema personal, emocional o de salud mental
+- Cualquier otra consulta no relacionada directamente con el alojamiento
+
+## PROTOCOLO PARA CONSULTAS FUERA DE ALCANCE
+
+Si el huésped pregunta algo fuera del alcance anterior, responde SIEMPRE con este formato (en su idioma):
+"Solo puedo ayudarte con dudas sobre el alojamiento, los electrodomésticos o incidencias durante tu estancia. Para esta consulta, te recomiendo buscar en Google o contactar con un servicio especializado. ¿Hay algo del apartamento en lo que pueda ayudarte?"
+
+## PROTOCOLO ESPECIAL — TEMAS SENSIBLES O EMOCIONALES
+
+Si el huésped menciona que se siente mal emocionalmente, está deprimido, solo, o expresa pensamientos de hacerse daño:
+1. Muestra empatía brevemente y con calidez humana.
+2. Indícale que contacte con una línea de ayuda o con alguien de confianza.
+3. No intentes hacer de terapeuta ni profundizar en el tema.
+4. Ejemplo de respuesta: "Lamento que te sientas así. Te animo a hablar con alguien de confianza o a llamar a una línea de apoyo emocional en tu país. Si necesitas ayuda con el alojamiento, aquí estoy."
+
+## TUS REGLAS DE COMPORTAMIENTO:
+1. IDIOMA — Detecta automáticamente el idioma en que escribe el huésped y responde SIEMPRE en ese mismo idioma. Si escribe en inglés, responde en inglés. Si escribe en alemán, responde en alemán. Si escribe en francés, responde en francés. Nunca respondas en español si el huésped no escribe en español. El hecho de que el contexto del alojamiento esté en español NO debe influir en el idioma de tu respuesta.
+2. Sé conciso, amable y estructurado. Usa listas numeradas para pasos de procedimientos.
+3. Si el huésped tiene un problema que no puedes resolver con instrucciones (avería grave, fuga, emergencia), indícale claramente que genere un ticket de incidencia pulsando el botón "Reportar incidencia" que tiene disponible.
+4. Para problemas de agua cortada, electricidad cortada o emergencias urgentes, da siempre el contacto de emergencia.
+5. Cuando expliques cómo usar un electrodoméstico, basa tu respuesta ÚNICAMENTE en el manual proporcionado.
+6. Si te preguntan algo sobre el alojamiento que no está cubierto por la información que tienes, sé honesto e indica que no tienes esa información y que contacten con el anfitrión.
+7. Siempre que sea posible, termina con una frase que confirme si el problema ha quedado resuelto.`;
+}
+
+async function buildSystemPrompt(
+  property: {
+    id: string;
+    name: string;
+    address: string;
+    description?: string | null;
+    wifiName?: string | null;
+    wifiPassword?: string | null;
+    checkoutInstructions?: string | null;
+    wasteInstructions?: string | null;
+    emergencyContact?: string | null;
+    hostName: string;
+    appliances: { name: string; model?: string | null; category: string; manual: string; location?: string | null }[];
+  },
+  userQuery: string
+): Promise<string> {
+  const base = buildBasePrompt(property);
+  const rules = buildRules();
+
+  // Intentar RAG: buscar los chunks más relevantes para la consulta
+  // Si falla (sin chunks indexados, error de API, etc.) → fallback automático a todos los manuales
+  let relevantChunks: { applianceName: string; chunkText: string; score: number }[] = [];
+  if (userQuery.trim().length > 0) {
+    try {
+      relevantChunks = await findRelevantChunks(userQuery, property.id, 5);
+    } catch (ragErr) {
+      console.warn("[RAG] Búsqueda semántica fallida, usando fallback:", ragErr);
+    }
+  }
+
+  if (relevantChunks.length > 0) {
+    // RAG: solo los fragmentos más relevantes del manual
+    const contextSection = relevantChunks
+      .map((c) => `## ${c.applianceName}\n${c.chunkText}`)
+      .join("\n\n---\n\n");
+
+    return `${base}
+
+## INFORMACIÓN RELEVANTE DE ELECTRODOMÉSTICOS
+(Fragmentos seleccionados por relevancia para esta consulta)
+
+${contextSection}
+
+---
+
+${rules}`;
+  }
+
+  // Fallback: pasar todos los manuales si no hay chunks indexados
+  const applianceSection = property.appliances
+    .map(
+      (a) =>
+        `## ${a.name}${a.model ? ` (${a.model})` : ""}${a.location ? ` — ubicación: ${a.location}` : ""}\n${a.manual}`
+    )
+    .join("\n\n---\n\n");
+
+  return `${base}
 
 ## MANUALES DE ELECTRODOMÉSTICOS
 
@@ -50,14 +143,26 @@ ${applianceSection}
 
 ---
 
-## TUS REGLAS DE COMPORTAMIENTO:
-1. Responde siempre en el mismo idioma que el huésped.
-2. Sé conciso, amable y estructurado. Usa listas numeradas para pasos de procedimientos.
-3. Si el huésped tiene un problema que no puedes resolver con instrucciones (avería grave, fuga, emergencia), indícale claramente que genere un ticket de incidencia pulsando el botón "Reportar incidencia" que tiene disponible.
-4. Para problemas de agua cortada, electricidad cortada o emergencias urgentes, da siempre el contacto de emergencia.
-5. Cuando expliques cómo usar un electrodoméstico, basa tu respuesta ÚNICAMENTE en el manual proporcionado arriba.
-6. Si te preguntan algo que no está cubierto por la información que tienes, sé honesto e indica que no tienes esa información y que contacten con el anfitrión.
-7. Siempre que sea posible, termina con una frase que confirme si el problema ha quedado resuelto.`;
+${rules}`;
+}
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const sessionId = searchParams.get("sessionId");
+  const propertyId = searchParams.get("propertyId");
+
+  if (!sessionId || !propertyId) {
+    return NextResponse.json({ messages: [] });
+  }
+
+  const conversation = await prisma.conversation.findFirst({
+    where: { sessionId, propertyId },
+  });
+
+  if (!conversation) return NextResponse.json({ messages: [] });
+
+  const messages = JSON.parse(conversation.messages as string) as ChatMessage[];
+  return NextResponse.json({ messages });
 }
 
 export async function POST(req: NextRequest) {
@@ -88,7 +193,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const systemPrompt = buildSystemPrompt(property);
+    // Tomar la última pregunta del usuario como consulta para RAG
+    const lastUserMessage = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
+    const systemPrompt = await buildSystemPrompt(property, lastUserMessage);
 
     const geminiContents = messages.map((m) => ({
       role: m.role === "assistant" ? "model" : "user",
@@ -99,7 +206,7 @@ export async function POST(req: NextRequest) {
       model: "gemini-2.5-flash",
       config: {
         systemInstruction: systemPrompt,
-        maxOutputTokens: 800,
+        maxOutputTokens: 2048,
         temperature: 0.4,
       },
       contents: geminiContents,
