@@ -387,8 +387,12 @@ NEXT_PUBLIC_APP_URL   — URL base de la app (http://localhost:3000 en dev)
 | Email al huésped al resolver incidencia | — | ✅ Hecho |
 | Realtime dashboard (Supabase Realtime) | 16/04 | ✅ Hecho |
 | Tab "Mis incidencias" para el huésped | — | ✅ Hecho |
+| Chat → botón "Ver en 3D" | — | ✅ Hecho |
+| Foto adjunta en incidencias (Gemini Vision) | — | ✅ Hecho |
+| Categorización automática de incidencias | — | ✅ Hecho |
+| Dashboard ESG (CO₂, visitas, resolución) | 26/04 | ✅ Hecho |
+| Analytics preguntas frecuentes | — | ✅ Hecho |
 | Three.js avanzado (raycasting) | 12/04 | ⏳ Pendiente |
-| Dashboard métricas ESG | 26/04 | ⏳ Pendiente |
 | Despliegue en producción (Vercel) | Antes de demo | ⏳ Pendiente |
 | Vídeo demo | 02/05 | ⏳ Pendiente |
 | **Presentación tribunal** | **04/05** | — |
@@ -461,3 +465,97 @@ Era posible crear dos propiedades con el mismo nombre bajo el mismo anfitrión, 
 ### Fix 10 — Login robusto con recuperación de contraseña
 Dos mejoras en la página de login: (A) el botón de "Entrar" ahora queda deshabilitado con un spinner durante la autenticación, impidiendo doble envío; (B) se añadió el enlace "¿Olvidaste tu contraseña?" que llama a `supabase.auth.resetPasswordForEmail()` — Supabase gestiona el envío del email de recuperación automáticamente, sin configuración adicional.
 **Archivo:** `src/app/auth/login/page.tsx`
+
+---
+
+## 18. Chat IA → Botón "Ver en 3D"
+
+Cuando la IA responde mencionando un electrodoméstico, aparece un botón pill debajo de la burbuja para abrirlo directamente en el visor 3D.
+
+```
+Huésped pregunta: "¿Cómo pongo la lavadora en modo rápido?"
+Gemini responde con instrucciones detalladas
+→ ChatInterface ejecuta detectAppliance(respuesta, appliancesDelHost)
+→ Si algún nombre de electrodoméstico aparece en el texto de la respuesta:
+   → Se renderiza un botón "Ver lavadora en 3D" bajo la burbuja de Gemini
+   → Al pulsarlo: onOpenAppliance(appliance) → abre ApplianceModal con Three.js
+```
+
+**Implementación técnica:**
+- `detectAppliance(text, appliances)` — busca coincidencia de nombre en minúsculas con `Array.find()`
+- El botón solo aparece en mensajes del asistente, nunca en los del usuario
+- Se usa una IIFE `(() => { ... })()` dentro del JSX para evaluar la detección de forma inline
+- `ChatInterface` ya recibe `appliances` y `onOpenAppliance` como props desde `page.tsx`, que los obtiene de `property.appliances`
+
+**Archivos:**
+- `src/components/guest/ChatInterface.tsx` — función `detectAppliance()` + botón pill
+- `src/app/guest/[propertyId]/page.tsx` — pasa props al ChatInterface
+
+---
+
+## 19. Foto adjunta en incidencias con análisis por IA
+
+El huésped puede adjuntar una foto de la avería al reportar una incidencia. Gemini Vision analiza la imagen y rellena automáticamente el campo descripción.
+
+```
+Flujo completo:
+1. Huésped pulsa "Adjuntar foto del problema" en IncidentForm
+2. Se abre la cámara del móvil (capture="environment") o galería
+3. Al seleccionar la imagen:
+   → Se muestra preview en miniatura (URL.createObjectURL)
+   → Spinner "Analizando imagen con IA..."
+   → POST /api/analyze-photo (FormData con el archivo)
+4. En el servidor:
+   → file.arrayBuffer() → Buffer.toString("base64")
+   → Gemini 2.5 Flash Vision con inlineData (mimeType + base64)
+   → System prompt: "Describe el problema o avería de forma clara, máximo 3 frases"
+   → Temperatura 0.2 (respuestas concretas y directas)
+5. La descripción devuelta rellena el textarea automáticamente
+6. El huésped puede editarla antes de enviar
+```
+
+**Por qué es útil:** El huésped puede hacer una foto sin necesidad de escribir. La IA convierte la imagen en un ticket técnico preciso que el anfitrión puede gestionar directamente.
+
+**Archivos:**
+- `src/app/api/analyze-photo/route.ts` — endpoint POST, recibe FormData, llama a Gemini Vision
+- `src/components/guest/IncidentForm.tsx` — `handlePhotoUpload()`, preview, estado `analyzing`
+
+---
+
+## 20. Dashboard ESG y Analytics para el anfitrión
+
+### 20a. Métricas ESG
+
+El dashboard del anfitrión muestra 3 KPIs de impacto medioambiental y operativo, calculados en tiempo real desde los datos de incidencias.
+
+| Métrica | Cálculo | Fuente |
+|---|---|---|
+| CO₂ ahorrado (kg) | incidencias resueltas × 1,2 kg | Cada visita técnica evitada ≈ 5 km en coche (120 g CO₂/km × 2) |
+| Visitas técnicas evitadas | COUNT de incidencias con `status = "resolved"` | Tabla `Incident` |
+| Tiempo medio de resolución | AVG(`updatedAt − createdAt`) de incidencias resueltas, en horas | Tabla `Incident` |
+
+**Decisión de diseño:** Las incidencias resueltas se consideran "visitas evitadas" porque el sistema de notificación + chat permite al anfitrión gestionar muchos problemas sin desplazarse. Es una métrica orientada a la presentación del impacto del producto.
+
+### 20b. Preguntas frecuentes (Analytics)
+
+El dashboard muestra un ranking de las 5 categorías de preguntas más habituales de los huéspedes, basado en el historial de conversaciones almacenado en BD.
+
+```
+Proceso de cálculo (servidor, sin llamadas a la IA):
+1. Carga todas las Conversation del anfitrión (campo messages: JSON string)
+2. Parsea cada JSON → extrae solo los mensajes con role = "user"
+3. Para cada mensaje, detecta categoría por keywords:
+   - WiFi / Contraseña  → ["wifi", "contraseña", "internet", "password"...]
+   - Check-out / Llaves → ["checkout", "salida", "llave", "hora de salida"...]
+   - Check-in / Acceso  → ["checkin", "llegada", "acceso", "código"...]
+   - Electrodomésticos  → ["lavadora", "nevera", "horno", "aire"...]
+   - Aparcamiento       → ["parking", "aparcamiento", "coche"...]
+   - Limpieza / Ropa    → ["limpieza", "toallas", "sábanas"...]
+4. Calcula porcentaje de cada categoría sobre el total de mensajes
+5. Muestra top 5 con barra de progreso proporcional
+```
+
+**Por qué keywords y no IA:** La categorización por keywords es O(n) y se ejecuta en el servidor sin coste de API. Suficiente para MVP y presenta bien ante el tribunal como "análisis de datos propios".
+
+**Archivos:**
+- `src/app/host/dashboard/page.tsx` — cálculo ESG + análisis de conversaciones + UI de ambas secciones

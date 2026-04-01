@@ -1,15 +1,22 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Loader2, AlertTriangle } from "lucide-react";
+import { Send, Bot, User, Loader2, AlertTriangle, Box } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { ChatMessage } from "@/types";
+import { ChatMessage, Appliance } from "@/types";
 import { cn } from "@/lib/utils";
 
 interface Props {
   propertyId: string;
   sessionId: string;
   onIncidentRequest: () => void;
+  appliances?: Appliance[];
+  onOpenAppliance?: (appliance: Appliance) => void;
+}
+
+function detectAppliance(text: string, appliances: Appliance[]): Appliance | null {
+  const lower = text.toLowerCase();
+  return appliances.find((a) => lower.includes(a.name.toLowerCase())) ?? null;
 }
 
 const I18N: Record<string, { greeting: string; questions: string[] }> = {
@@ -49,7 +56,7 @@ function detectLang(): string {
   return I18N[lang] ? lang : "en";
 }
 
-export default function ChatInterface({ propertyId, sessionId, onIncidentRequest }: Props) {
+export default function ChatInterface({ propertyId, sessionId, onIncidentRequest, appliances = [], onOpenAppliance }: Props) {
   const lang = detectLang();
   const { greeting, questions } = I18N[lang];
 
@@ -154,27 +161,41 @@ export default function ChatInterface({ propertyId, sessionId, onIncidentRequest
                 <Bot className="w-4 h-4" />
               )}
             </div>
-            <div
-              className={cn(
-                "rounded-2xl px-4 py-3 text-sm font-inter leading-relaxed",
-                msg.role === "user"
-                  ? "bg-deep-forest text-off-white rounded-tr-sm"
-                  : "bg-white border border-gray-100 text-slate-body rounded-tl-sm shadow-sm"
-              )}
-            >
-              <ReactMarkdown
-                components={{
-                  p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                  ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
-                  ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
-                  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                  code: ({ children }) => (
-                    <code className="bg-gray-100 rounded px-1 text-xs font-mono">{children}</code>
-                  ),
-                }}
+            <div className="space-y-2">
+              <div
+                className={cn(
+                  "rounded-2xl px-4 py-3 text-sm font-inter leading-relaxed",
+                  msg.role === "user"
+                    ? "bg-deep-forest text-off-white rounded-tr-sm"
+                    : "bg-white border border-gray-100 text-slate-body rounded-tl-sm shadow-sm"
+                )}
               >
-                {msg.content}
-              </ReactMarkdown>
+                <ReactMarkdown
+                  components={{
+                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                    ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                    code: ({ children }) => (
+                      <code className="bg-gray-100 rounded px-1 text-xs font-mono">{children}</code>
+                    ),
+                  }}
+                >
+                  {msg.content}
+                </ReactMarkdown>
+              </div>
+              {msg.role === "assistant" && onOpenAppliance && (() => {
+                const found = detectAppliance(msg.content, appliances);
+                return found ? (
+                  <button
+                    onClick={() => onOpenAppliance(found)}
+                    className="flex items-center gap-1.5 text-xs font-inter font-medium text-electric-mint bg-electric-mint/10 hover:bg-electric-mint/20 border border-electric-mint/30 px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    <Box className="w-3 h-3" />
+                    Ver {found.name} en 3D
+                  </button>
+                ) : null;
+              })()}
             </div>
           </div>
         ))}

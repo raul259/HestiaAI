@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { X, AlertTriangle, Loader2, CheckCircle2, Sparkles } from "lucide-react";
+import { useState, useRef } from "react";
+import { X, AlertTriangle, Loader2, CheckCircle2, Sparkles, Camera, Wand2 } from "lucide-react";
 
 const PRIORITIES = [
   { value: "low", label: "Baja — no urgente" },
@@ -28,6 +28,28 @@ export default function IncidentForm({ propertyId, onClose, onIncidentCreated }:
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const photoRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoPreview(URL.createObjectURL(file));
+    setAnalyzing(true);
+    const data = new FormData();
+    data.append("photo", file);
+    try {
+      const res = await fetch("/api/analyze-photo", { method: "POST", body: data });
+      const json = await res.json();
+      if (json.description) setForm((prev) => ({ ...prev, description: json.description }));
+    } catch {
+      // ignore analysis errors
+    } finally {
+      setAnalyzing(false);
+      if (photoRef.current) photoRef.current.value = "";
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,6 +157,47 @@ export default function IncidentForm({ propertyId, onClose, onIncidentCreated }:
                 rows={4}
                 className="input-field resize-none"
               />
+            </div>
+
+            <div>
+              <input
+                ref={photoRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => photoRef.current?.click()}
+                disabled={analyzing}
+                className="flex items-center gap-2 text-sm font-inter text-slate-body border border-dashed border-gray-300 rounded-xl px-4 py-2.5 hover:border-electric-mint hover:text-deep-forest transition-colors w-full justify-center disabled:opacity-50"
+              >
+                {analyzing ? (
+                  <>
+                    <Wand2 className="w-4 h-4 animate-pulse text-electric-mint" />
+                    Analizando imagen con IA...
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-4 h-4" />
+                    Adjuntar foto del problema
+                  </>
+                )}
+              </button>
+              {photoPreview && (
+                <div className="mt-2 relative">
+                  <img src={photoPreview} alt="preview" className="w-full h-32 object-cover rounded-xl border border-gray-200" />
+                  <button
+                    type="button"
+                    onClick={() => setPhotoPreview(null)}
+                    className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2 bg-electric-mint/10 border border-electric-mint/30 rounded-xl px-3 py-2">

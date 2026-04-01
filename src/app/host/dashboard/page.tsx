@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
-import { Building2, AlertCircle, Wrench, ArrowRight, Plus, ExternalLink } from "lucide-react";
+import { Building2, AlertCircle, Wrench, ArrowRight, Plus, ExternalLink, Leaf, Car, Clock, MessageSquare } from "lucide-react";
 import LogoutButton from "@/components/host/LogoutButton";
 import RealtimeIncidents from "@/components/host/RealtimeIncidents";
 
@@ -11,7 +11,7 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const [properties, incidents] = await Promise.all([
+  const [properties, incidents, allIncidents, conversations] = await Promise.all([
     prisma.property.findMany({
       where: { hostId: user!.id },
       include: {
@@ -25,6 +25,14 @@ export default async function DashboardPage() {
       orderBy: { createdAt: "desc" },
       take: 10,
     }),
+    prisma.incident.findMany({
+      where: { property: { hostId: user!.id } },
+      select: { status: true, createdAt: true, updatedAt: true },
+    }),
+    prisma.conversation.findMany({
+      where: { property: { hostId: user!.id } },
+      select: { messages: true },
+    }),
   ]);
 
   const openIncidents = incidents.filter((i) => i.status === "open" || i.status === "in_progress").length;
@@ -32,6 +40,64 @@ export default async function DashboardPage() {
     (acc, p) => acc + p._count.appliances,
     0
   );
+
+  // ESG metrics
+  const resolvedIncidents = allIncidents.filter((i) => i.status === "resolved");
+  const visitasEvitadas = resolvedIncidents.length;
+  const co2Ahorrado = +(visitasEvitadas * 1.2).toFixed(1); // kg CO₂ por visita técnica evitada (~5km coche)
+  const avgResolutionHours =
+    resolvedIncidents.length > 0
+      ? +(
+          resolvedIncidents.reduce(
+            (acc, i) => acc + (i.updatedAt.getTime() - i.createdAt.getTime()),
+            0
+          ) /
+          resolvedIncidents.length /
+          1000 /
+          3600
+        ).toFixed(1)
+      : null;
+
+  // Analytics: preguntas más frecuentes por categoría
+  const TOPICS = [
+    { key: "wifi", keywords: ["wifi", "contraseña", "internet", "password", "wlan", "red"], label: "WiFi / Contraseña" },
+    { key: "checkout", keywords: ["checkout", "check-out", "salida", "llave", "dejar", "hora de salida"], label: "Check-out / Llaves" },
+    { key: "checkin", keywords: ["checkin", "check-in", "llegada", "entrada", "acceso", "código", "cómo entro"], label: "Check-in / Acceso" },
+    { key: "appliance", keywords: ["lavadora", "nevera", "horno", "microondas", "lavavajillas", "aire", "calefacción", "televisión", "tv", "electrodoméstico"], label: "Electrodomésticos" },
+    { key: "parking", keywords: ["parking", "aparcamiento", "coche", "garaje", "plaza", "aparcar"], label: "Aparcamiento" },
+    { key: "cleaning", keywords: ["limpieza", "toallas", "sábanas", "ropa", "limpiar", "basura"], label: "Limpieza / Ropa de cama" },
+  ];
+
+  const topicCounts: Record<string, number> = Object.fromEntries(TOPICS.map((t) => [t.key, 0]));
+  let totalUserMessages = 0;
+
+  for (const conv of conversations) {
+    try {
+      const msgs: { role: string; content: string }[] = JSON.parse(conv.messages);
+      for (const msg of msgs) {
+        if (msg.role !== "user") continue;
+        totalUserMessages++;
+        const lower = msg.content.toLowerCase();
+        for (const topic of TOPICS) {
+          if (topic.keywords.some((kw) => lower.includes(kw))) {
+            topicCounts[topic.key]++;
+            break;
+          }
+        }
+      }
+    } catch {
+      // ignore malformed conversations
+    }
+  }
+
+  const topTopics = TOPICS.map((t) => ({
+    label: t.label,
+    count: topicCounts[t.key],
+    pct: totalUserMessages > 0 ? Math.round((topicCounts[t.key] / totalUserMessages) * 100) : 0,
+  }))
+    .filter((t) => t.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
 
   // Mapa propertyId → nombre para el componente Realtime
   const propertyNames = Object.fromEntries(
@@ -194,6 +260,80 @@ export default async function DashboardPage() {
             propertyNames={propertyNames}
           />
         </div>
+
+        {/* ESG */}
+        <div>
+          <h2 className="font-outfit font-semibold text-xl text-deep-forest mb-4 flex items-center gap-2">
+            <Leaf className="w-5 h-5 text-electric-mint" />
+            Impacto ESG
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="card flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0">
+                <Leaf className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-outfit font-bold text-2xl text-deep-forest">
+                  {co2Ahorrado} <span className="text-base font-inter font-normal text-gray-400">kg CO₂</span>
+                </div>
+                <div className="font-inter text-sm text-gray-400">Emisiones evitadas</div>
+              </div>
+            </div>
+            <div className="card flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                <Car className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-outfit font-bold text-2xl text-deep-forest">{visitasEvitadas}</div>
+                <div className="font-inter text-sm text-gray-400">Visitas técnicas evitadas</div>
+              </div>
+            </div>
+            <div className="card flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-outfit font-bold text-2xl text-deep-forest">
+                  {avgResolutionHours !== null ? (
+                    <>{avgResolutionHours} <span className="text-base font-inter font-normal text-gray-400">h</span></>
+                  ) : (
+                    <span className="text-base font-inter font-normal text-gray-400">Sin datos</span>
+                  )}
+                </div>
+                <div className="font-inter text-sm text-gray-400">Tiempo medio resolución</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Analytics */}
+        {topTopics.length > 0 && (
+          <div>
+            <h2 className="font-outfit font-semibold text-xl text-deep-forest mb-4 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-electric-mint" />
+              Preguntas más frecuentes
+            </h2>
+            <div className="card space-y-4">
+              {topTopics.map((topic) => (
+                <div key={topic.label}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-inter text-sm text-slate-body">{topic.label}</span>
+                    <span className="font-inter text-xs text-gray-400">{topic.count} preguntas · {topic.pct}%</span>
+                  </div>
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-electric-mint rounded-full transition-all"
+                      style={{ width: `${topic.pct}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+              <p className="text-xs font-inter text-gray-400 pt-1">
+                Basado en {totalUserMessages} mensajes de huéspedes
+              </p>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

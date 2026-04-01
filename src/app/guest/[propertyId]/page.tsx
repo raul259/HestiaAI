@@ -201,6 +201,8 @@ export default function GuestPage({
             propertyId={propertyId}
             sessionId={sessionId}
             onIncidentRequest={() => setShowIncident(true)}
+            appliances={property.appliances ?? []}
+            onOpenAppliance={(a) => setSelectedAppliance(a)}
           />
         </div>
 
