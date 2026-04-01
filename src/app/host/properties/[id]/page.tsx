@@ -5,6 +5,7 @@ import { ArrowLeft, Wifi, Phone, LogOut, Trash2, ExternalLink } from "lucide-rea
 import ApplianceSection from "@/components/host/ApplianceSection";
 import IncidentList from "@/components/host/IncidentList";
 import QRCodeCard from "@/components/host/QRCodeCard";
+import PropertyStatusBadge from "@/components/host/PropertyStatusBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -43,14 +44,17 @@ export default async function PropertyDetailPage({
               <p className="font-inter text-xs text-white/50">{property.address}</p>
             </div>
           </div>
-          <Link
-            href={`/guest/${property.id}`}
-            target="_blank"
-            className="flex items-center gap-2 text-sm font-inter text-electric-mint border border-electric-mint/30 rounded-xl px-4 py-2 hover:bg-electric-mint/10 transition-colors"
-          >
-            Vista huésped
-            <ExternalLink className="w-3 h-3" />
-          </Link>
+          <div className="flex items-center gap-3">
+            <PropertyStatusBadge propertyId={property.id} initialStatus={property.status ?? "active"} />
+            <Link
+              href={`/guest/${property.id}`}
+              target="_blank"
+              className="flex items-center gap-2 text-sm font-inter text-electric-mint border border-electric-mint/30 rounded-xl px-4 py-2 hover:bg-electric-mint/10 transition-colors"
+            >
+              Vista huésped
+              <ExternalLink className="w-3 h-3" />
+            </Link>
+          </div>
         </div>
       </header>
 

@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [cargando, setCargando] = useState(false);
 
   async function handleLogin(e: React.FormEvent) {
@@ -96,16 +97,48 @@ export default function LoginPage() {
               </p>
             )}
 
+            {info && (
+              <p className="text-electric-mint text-sm bg-electric-mint/10 p-3 rounded-lg border border-electric-mint/30">
+                {info}
+              </p>
+            )}
+
             <button
               type="submit"
               disabled={cargando}
-              className="w-full bg-electric-mint text-deep-forest font-semibold py-3 rounded-xl hover:bg-electric-mint/90 transition-colors mt-2 disabled:opacity-60"
+              className="w-full bg-electric-mint text-deep-forest font-semibold py-3 rounded-xl hover:bg-electric-mint/90 transition-colors mt-2 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {cargando ? "Entrando..." : "Entrar"}
+              {cargando ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  Entrando...
+                </>
+              ) : "Entrar"}
             </button>
           </form>
 
-          <p className="text-center text-sm text-white/50 mt-6">
+          <div className="text-center mt-3">
+            <button
+              type="button"
+              onClick={async () => {
+                if (!email) { setError("Escribe tu correo primero."); return; }
+                setError("");
+                const supabase = createClient();
+                await supabase.auth.resetPasswordForEmail(email, {
+                  redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/host/reset-password`,
+                });
+                setInfo("Te hemos enviado un enlace de recuperación. Revisa tu correo.");
+              }}
+              className="text-sm text-white/40 hover:text-electric-mint transition-colors"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
+
+          <p className="text-center text-sm text-white/50 mt-4">
             ¿No tienes cuenta?{" "}
             <Link href="/auth/register" className="text-electric-mint font-medium hover:underline">
               Regístrate

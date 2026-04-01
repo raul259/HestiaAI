@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Plus, Trash2, ChevronDown, ChevronUp, FileText, Upload } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, FileText, Upload, CheckCircle2 } from "lucide-react";
 import { Appliance } from "@/types";
 import { getCategoryIcon } from "@/lib/utils";
 
@@ -288,10 +288,24 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
                 </div>
               </div>
               {expanded === a.id && (
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <pre className="font-inter text-xs text-slate-body whitespace-pre-wrap leading-relaxed bg-gray-50 rounded-xl p-4">
-                    {a.manual}
-                  </pre>
+                <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+                  {a.manual ? (
+                    <>
+                      <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                        <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                        <span className="font-inter font-medium">Manual procesado y listo para responder preguntas del huésped</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-50 rounded-xl px-4 py-2">
+                        <FileText className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span>{Math.round(a.manual.length / 5)} palabras aprox. · Gemini usará este contenido como contexto</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                      <FileText className="w-4 h-4 flex-shrink-0" />
+                      <span className="font-inter">Sin manual — sube un PDF para activar el asistente en este electrodoméstico</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -153,6 +153,55 @@ export async function enviarEmailIncidencia(params: IncidentEmailParams) {
   });
 }
 
+interface GuestReplyEmailParams {
+  guestEmail: string;
+  guestName?: string;
+  propertyName: string;
+  incidentTitle: string;
+  hostName: string;
+  message: string;
+}
+
+export async function enviarEmailRespuesta(params: GuestReplyEmailParams) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const { guestEmail, guestName, propertyName, incidentTitle, hostName, message } = params;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin: 0; padding: 0; background: #F9FAFB; font-family: 'Inter', Arial, sans-serif;">
+  <div style="max-width: 560px; margin: 40px auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+    <div style="background: #1B3022; padding: 28px 32px;">
+      <span style="font-size: 20px; font-weight: 700; color: white;">Hestia</span><span style="font-size: 20px; font-weight: 700; color: #88EBC0;">AI</span>
+    </div>
+    <div style="padding: 32px;">
+      <p style="margin: 0 0 8px; color: #6B7280; font-size: 14px;">Hola${guestName ? `, ${guestName}` : ""}.</p>
+      <h1 style="margin: 0 0 24px; font-size: 20px; color: #1B3022;">Respuesta sobre tu incidencia en ${propertyName}</h1>
+      <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px;">
+        <p style="margin: 0 0 4px; font-size: 12px; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.05em;">Incidencia</p>
+        <p style="margin: 0; font-size: 15px; font-weight: 600; color: #1B3022;">${incidentTitle}</p>
+      </div>
+      <div style="background: #F0FDF4; border-left: 4px solid #88EBC0; padding: 16px 20px; border-radius: 0 10px 10px 0; margin-bottom: 24px;">
+        <p style="margin: 0 0 6px; font-size: 12px; color: #6B7280;">Mensaje de ${hostName}</p>
+        <p style="margin: 0; font-size: 15px; color: #1B3022; line-height: 1.6;">${message}</p>
+      </div>
+    </div>
+    <div style="padding: 20px 32px; border-top: 1px solid #F3F4F6; text-align: center;">
+      <p style="margin: 0; font-size: 12px; color: #9CA3AF;">HestiaAI · Asistencia inteligente para alojamientos vacacionales</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  return resend.emails.send({
+    from: "HestiaAI <onboarding@resend.dev>",
+    to: guestEmail,
+    subject: `Respuesta a tu incidencia en ${propertyName} — ${incidentTitle}`,
+    html,
+  });
+}
+
 interface GuestResolvedEmailParams {
   guestEmail: string;
   guestName?: string;

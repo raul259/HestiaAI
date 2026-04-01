@@ -3,12 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
+
+function detectPlaceholders(text: string): string[] {
+  const matches = text.match(/\[[^\]]+\]/g);
+  return matches ?? [];
+}
 
 export default function NewPropertyPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [placeholderWarnings, setPlaceholderWarnings] = useState<Record<string, string[]>>({});
   const [form, setForm] = useState({
     name: "",
     address: "",
@@ -27,6 +33,17 @@ export default function NewPropertyPage() {
     e.preventDefault();
     if (!form.name || !form.address || !form.hostName || !form.hostEmail) {
       setError("Nombre, dirección, nombre del anfitrión y email son obligatorios.");
+      return;
+    }
+
+    const warnings: Record<string, string[]> = {};
+    const checkoutPh = detectPlaceholders(form.checkoutInstructions);
+    const wastePh = detectPlaceholders(form.wasteInstructions);
+    if (checkoutPh.length) warnings.checkoutInstructions = checkoutPh;
+    if (wastePh.length) warnings.wasteInstructions = wastePh;
+    setPlaceholderWarnings(warnings);
+    if (Object.keys(warnings).length > 0) {
+      setError("Hay campos sin completar en las instrucciones. Revísalos antes de crear la propiedad.");
       return;
     }
 
@@ -205,11 +222,17 @@ export default function NewPropertyPage() {
               </label>
               <textarea
                 value={form.checkoutInstructions}
-                onChange={(e) => F("checkoutInstructions", e.target.value)}
+                onChange={(e) => { F("checkoutInstructions", e.target.value); setPlaceholderWarnings((p) => ({ ...p, checkoutInstructions: [] })); }}
                 placeholder="1. Lavar los platos utilizados&#10;2. Dejar las llaves en la caja de seguridad&#10;3. Check-out antes de las 11:00h"
                 rows={4}
                 className="input-field resize-none text-sm"
               />
+              {placeholderWarnings.checkoutInstructions?.length > 0 && (
+                <div className="flex items-start gap-2 mt-1.5 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                  <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                  <span>Campos sin completar: {placeholderWarnings.checkoutInstructions.join(", ")}</span>
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-inter text-gray-600 mb-1.5">
@@ -217,11 +240,17 @@ export default function NewPropertyPage() {
               </label>
               <textarea
                 value={form.wasteInstructions}
-                onChange={(e) => F("wasteInstructions", e.target.value)}
+                onChange={(e) => { F("wasteInstructions", e.target.value); setPlaceholderWarnings((p) => ({ ...p, wasteInstructions: [] })); }}
                 placeholder="Contenedor amarillo (plástico): Calle Mayor&#10;Contenedor azul (papel): Plaza Central"
                 rows={4}
                 className="input-field resize-none text-sm"
               />
+              {placeholderWarnings.wasteInstructions?.length > 0 && (
+                <div className="flex items-start gap-2 mt-1.5 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                  <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                  <span>Campos sin completar: {placeholderWarnings.wasteInstructions.join(", ")}</span>
+                </div>
+              )}
             </div>
           </div>
 

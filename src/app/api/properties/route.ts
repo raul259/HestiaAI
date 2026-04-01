@@ -58,6 +58,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const existing = await prisma.property.findFirst({
+      where: {
+        hostId: user.id,
+        name: { equals: name.trim(), mode: "insensitive" },
+      },
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        { error: "Ya tienes una propiedad con ese nombre. Usa un nombre diferente para distinguirlas." },
+        { status: 409 }
+      );
+    }
+
     const property = await prisma.property.create({
       data: {
         hostId: user.id,
@@ -79,5 +93,29 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("[PROPERTIES POST]", error);
     return NextResponse.json({ error: "Error al crear propiedad." }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+
+    const { id, status } = await req.json();
+    const VALID_STATUSES = ["active", "occupied", "inactive"];
+    if (!id || !VALID_STATUSES.includes(status)) {
+      return NextResponse.json({ error: "Datos inválidos." }, { status: 400 });
+    }
+
+    const property = await prisma.property.updateMany({
+      where: { id, hostId: user.id },
+      data: { status },
+    });
+
+    return NextResponse.json(property);
+  } catch (error) {
+    console.error("[PROPERTIES PATCH]", error);
+    return NextResponse.json({ error: "Error al actualizar propiedad." }, { status: 500 });
   }
 }

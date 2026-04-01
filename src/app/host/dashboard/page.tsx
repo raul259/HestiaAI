@@ -85,31 +85,35 @@ export default async function DashboardPage() {
               value: properties.length,
               icon: <Building2 className="w-5 h-5" />,
               color: "bg-blue-50 text-blue-600",
+              href: "/host/properties",
             },
             {
               label: "Incidencias abiertas",
               value: openIncidents,
               icon: <AlertCircle className="w-5 h-5" />,
               color: "bg-orange-50 text-orange-600",
+              href: "/host/properties",
             },
             {
               label: "Electrodomésticos",
               value: totalAppliances,
               icon: <Wrench className="w-5 h-5" />,
               color: "bg-green-50 text-green-600",
+              href: "/host/properties",
             },
           ].map((stat, i) => (
-            <div key={i} className="card flex items-center gap-4">
+            <Link key={i} href={stat.href} className="card flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer group">
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.color}`}>
                 {stat.icon}
               </div>
-              <div>
+              <div className="flex-1">
                 <div className="font-outfit font-bold text-2xl text-deep-forest">
                   {stat.value}
                 </div>
                 <div className="font-inter text-sm text-gray-400">{stat.label}</div>
               </div>
-            </div>
+              <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+            </Link>
           ))}
         </div>
 

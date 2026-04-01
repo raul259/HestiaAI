@@ -15,7 +15,8 @@ export default function QRCodeCard({ propertyId, propertyName }: Props) {
 
   useEffect(() => {
     if (!canvasRef.current) return;
-    const guestUrl = `${window.location.origin}/guest/${propertyId}`;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    const guestUrl = `${baseUrl}/guest/${propertyId}`;
     QRCode.toCanvas(canvasRef.current, guestUrl, {
       width: 200,
       margin: 2,

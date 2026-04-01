@@ -21,6 +21,7 @@ model Property {
   hostName             String
   hostEmail            String
   accessCode           String?
+  status               String         @default("active")
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
   appliances           Appliance[]
@@ -51,19 +52,29 @@ model ManualChunk {
 }
 
 model Incident {
-  id          String    @id @default(cuid())
+  id          String         @id @default(cuid())
   propertyId  String
   title       String
   description String
   category    String
-  status      String    @default("open")
-  priority    String    @default("medium")
+  status      String         @default("open")
+  priority    String         @default("medium")
   guestName   String?
   guestEmail  String?
   scheduledAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  property    Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  property    Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  notes       IncidentNote[]
+}
+
+model IncidentNote {
+  id         String   @id @default(cuid())
+  incidentId String
+  content    String
+  type       String   @default("internal") // "internal" | "reply"
+  createdAt  DateTime @default(now())
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
 }
 
 model Conversation {

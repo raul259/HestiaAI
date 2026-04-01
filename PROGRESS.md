@@ -56,7 +56,7 @@
 - [x] **Multiidioma automático en chat** — Gemini detecta el idioma del huésped y responde en él. UI adaptada (saludo + preguntas rápidas) en 7 idiomas vía navigator.language.
 - [ ] **Chat → botón abrir visor 3D** — cuando el huésped pregunta por un electrodoméstico, la IA ofrece abrirlo en 3D directamente desde el chat.
 - [ ] **Foto adjunta en incidencias** — el huésped sube foto de la avería, la IA la describe automáticamente en el ticket.
-- [ ] **Categorización automática de incidencias por IA** — eliminar selección manual de categoría.
+- [x] **Categorización automática de incidencias por IA** — eliminar selección manual de categoría.
 
 ### Nuevas features diferenciadoras
 
@@ -77,3 +77,17 @@
 | Métricas ESG | Argumento de impacto para el tribunal |
 | Visor 3D de electrodomésticos | Diferenciador único, ningún competidor lo tiene |
 | Multiidioma automático | Clave para anfitriones con huéspedes internacionales |
+| Fix métricas clicables | UX básica del dashboard — navegación desde KPIs |
+| Fix texto crudo PDF | Profesionalidad de la UI — ocultar datos internos |
+| Fix etiquetas en español | Consistencia de idioma en toda la interfaz |
+| Fix notas en incidencias | El anfitrión puede dejar historial y responder al huésped |
+| Fix filtro de incidencias | Escalabilidad — imprescindible con 20+ incidencias |
+| Fix validación placeholders | Evita instrucciones incompletas visibles para el huésped |
+| Fix URL QR en producción | Crítico — sin esto el QR no funciona fuera de localhost |
+| Fix estado de propiedad | Visibilidad operativa — activa / ocupada / inactiva |
+| Fix nombres duplicados | Integridad de datos — evitar confusión entre propiedades |
+| Fix login robusto | Doble-click bloqueado + recuperación de contraseña |
+| Subida de GLB al formulario | Cierra el flujo escaneo → modelo → visor Three.js |
+| Guía de escaneo in-app | El anfitrión sabe exactamente cómo fotografiar — reduce GLBs de mala calidad |
+| Hotspots sobre el modelo 3D | Diferenciador real — señalar botones exactos en el electrodoméstico real |
+| Rediseño vista huésped | Elimina vacío central, añade cards rápidas, pills horizontales, botón Ver 3D |
