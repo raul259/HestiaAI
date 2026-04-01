@@ -415,3 +415,49 @@ El QR es un enlace público a `/guest/{propertyId}`. No hay credenciales en la U
 
 **¿Por qué SQLite en desarrollo y PostgreSQL en producción?**
 Se empezó con SQLite por simplicidad (sin servidor). Al migrar a Supabase, Prisma solo requirió cambiar `provider = "sqlite"` a `provider = "postgresql"` y actualizar la connection string. El schema no cambió.
+
+---
+
+## 17. Mejoras de UX y robustez del panel del anfitrión
+
+Durante la fase de pulido se implementaron 10 correcciones que elevan la calidad del producto:
+
+### Fix 1 — Métricas del dashboard clicables
+Las tarjetas de KPIs (propiedades, incidencias abiertas, electrodomésticos) del dashboard eran solo informativas. Se envolvieron en `<Link>` de Next.js con una flecha que aparece al pasar el cursor. Ahora navegan directamente a la sección correspondiente.
+**Archivo:** `src/app/host/dashboard/page.tsx`
+
+### Fix 2 — Ocultar texto crudo del PDF
+Al expandir un electrodoméstico en el panel del anfitrión se mostraba el texto completo extraído del PDF (cientos de líneas de manual). Se reemplazó por un panel de estado limpio: badge verde "Manual procesado" con el número aproximado de palabras, o badge ámbar "Sin manual" si no se ha subido PDF.
+**Archivo:** `src/components/host/ApplianceSection.tsx`
+
+### Fix 3 — Etiquetas de incidencias en español
+Los valores de la base de datos (`in_progress`, `urgent`, `resolved`) se mostraban directamente en la UI. Se aplicaron las funciones `getPriorityLabel()` y `getStatusLabel()` que ya existían en `utils.ts` pero no se usaban en `IncidentList.tsx`.
+**Archivo:** `src/components/host/IncidentList.tsx`
+
+### Fix 4 — Notas internas y respuesta al huésped
+El anfitrión no tenía forma de dejar historial de actuaciones ni comunicarse con el huésped desde el panel. Se añadió un nuevo modelo `IncidentNote` en Prisma con campo `type` (internal | reply). Al expandir una incidencia aparece un campo con dos modos: nota interna (solo visible en el panel) o respuesta al huésped (envía email automático via Resend si el huésped dejó su correo).
+**Archivos:** `prisma/schema.prisma`, `src/app/api/incidents/notes/route.ts`, `src/components/host/IncidentList.tsx`, `src/lib/email.ts`
+
+### Fix 5 — Filtro y búsqueda de incidencias
+Con múltiples incidencias históricas era difícil encontrar una concreta. Se añadió una barra de búsqueda por texto (título y descripción) y dos selectores de filtro (estado y prioridad) directamente en `IncidentList.tsx` usando `useMemo` para el filtrado reactivo sin llamadas a la API. Muestra un contador de resultados cuando hay filtros activos.
+**Archivo:** `src/components/host/IncidentList.tsx`
+
+### Fix 6 — Detección de campos sin completar en instrucciones
+Las instrucciones de checkout y residuos pueden contener plantillas con texto sin rellenar como `[Nombre del técnico]`. Si el anfitrión activa el QR sin completarlos, el huésped verá texto genérico. Al hacer submit se detectan patrones `[...]` con regex y se muestra un aviso ámbar bajo el campo afectado con los placeholders exactos encontrados.
+**Archivo:** `src/app/host/properties/new/page.tsx`
+
+### Fix 7 — URL del QR en producción
+El componente `QRCodeCard` ya usaba `process.env.NEXT_PUBLIC_APP_URL || window.location.origin`. Se verificó la configuración y se añadió la URL de producción `https://hestia-ai.vercel.app` en las variables de entorno de Vercel. En desarrollo sigue apuntando a localhost.
+**Archivo:** `src/components/host/QRCodeCard.tsx`, variables de entorno Vercel
+
+### Fix 8 — Estado operativo de la propiedad
+El anfitrión no tenía visibilidad del estado de cada alojamiento de un vistazo. Se añadió el campo `status` (String, default "active") al modelo `Property` en Prisma. Se creó el componente `PropertyStatusBadge` con un desplegable para cambiar entre **Activa**, **Con huésped** e **Inactiva**. Los cambios se persisten via `PATCH /api/properties`.
+**Archivos:** `prisma/schema.prisma`, `src/components/host/PropertyStatusBadge.tsx`, `src/app/api/properties/route.ts`
+
+### Fix 9 — Validación de nombres duplicados
+Era posible crear dos propiedades con el mismo nombre bajo el mismo anfitrión, generando confusión en el panel. En el endpoint `POST /api/properties` se añadió una consulta previa con `findFirst` usando `mode: "insensitive"` (insensible a mayúsculas). Si ya existe una propiedad con ese nombre devuelve HTTP 409 con mensaje de error claro.
+**Archivo:** `src/app/api/properties/route.ts`
+
+### Fix 10 — Login robusto con recuperación de contraseña
+Dos mejoras en la página de login: (A) el botón de "Entrar" ahora queda deshabilitado con un spinner durante la autenticación, impidiendo doble envío; (B) se añadió el enlace "¿Olvidaste tu contraseña?" que llama a `supabase.auth.resetPasswordForEmail()` — Supabase gestiona el envío del email de recuperación automáticamente, sin configuración adicional.
+**Archivo:** `src/app/auth/login/page.tsx`
