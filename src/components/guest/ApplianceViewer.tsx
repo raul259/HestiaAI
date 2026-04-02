@@ -95,10 +95,11 @@ export default function ApplianceViewer({ appliance }: Props) {
     controls.maxPolarAngle = Math.PI / 2;
     controlsRef.current = controls;
 
-    // Load .glb
+    // Load .glb — usa modelo subido por el anfitrión o el genérico por categoría
+    const modelUrl = appliance.glbUrl || getModelPath(appliance.category);
     const loader = new GLTFLoader();
     loader.load(
-      getModelPath(appliance.category),
+      modelUrl,
       (gltf) => {
         const model = gltf.scene;
 
@@ -159,7 +160,7 @@ export default function ApplianceViewer({ appliance }: Props) {
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
       renderer.dispose();
     };
-  }, [appliance.category]);
+  }, [appliance.category, appliance.glbUrl]);
 
   return (
     <div className="relative w-full h-full rounded-xl overflow-hidden">

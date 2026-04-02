@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Plus, Trash2, ChevronDown, ChevronUp, FileText, Upload, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, FileText, Upload, CheckCircle2, Box, HelpCircle, Loader2 } from "lucide-react";
 import { Appliance } from "@/types";
 import { getCategoryIcon } from "@/lib/utils";
+import ScanGuideModal from "./ScanGuideModal";
 
 const CATEGORIES = [
   { value: "tv", label: "Televisión" },
@@ -29,7 +30,10 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
   const [saving, setSaving] = useState(false);
   const [extrayendo, setExtrayendo] = useState(false);
   const [pdfError, setPdfError] = useState("");
+  const [uploadingGlb, setUploadingGlb] = useState<string | null>(null); // applianceId en curso
+  const [showScanGuide, setShowScanGuide] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const glbInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: "",
     model: "",
@@ -79,6 +83,41 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
 
     setExtrayendo(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleGlbUpload = async (e: React.ChangeEvent<HTMLInputElement>, appliance: Appliance) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (ext !== "glb" && ext !== "gltf") {
+      alert("Solo se admiten archivos .glb o .gltf.");
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      alert("El archivo supera el límite de 50 MB.");
+      return;
+    }
+
+    setUploadingGlb(appliance.id);
+    const data = new FormData();
+    data.append("glb", file);
+    data.append("applianceId", appliance.id);
+    data.append("propertyId", propertyId);
+
+    const res = await fetch("/api/appliances/upload-glb", { method: "POST", body: data });
+    const json = await res.json();
+
+    if (res.ok) {
+      setAppliances((prev) =>
+        prev.map((a) => (a.id === appliance.id ? { ...a, glbUrl: json.glbUrl } : a))
+      );
+    } else {
+      alert(json.error ?? "Error al subir el modelo 3D.");
+    }
+
+    setUploadingGlb(null);
+    if (glbInputRef.current) glbInputRef.current.value = "";
   };
 
   const handleDelete = async (id: string) => {
@@ -289,6 +328,7 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
               </div>
               {expanded === a.id && (
                 <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+                  {/* Estado del manual */}
                   {a.manual ? (
                     <>
                       <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
@@ -306,12 +346,64 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
                       <span className="font-inter">Sin manual — sube un PDF para activar el asistente en este electrodoméstico</span>
                     </div>
                   )}
+
+                  {/* Estado del modelo 3D */}
+                  {a.glbUrl ? (
+                    <div className="flex items-center gap-2 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                      <Box className="w-4 h-4 flex-shrink-0" />
+                      <span className="font-inter font-medium flex-1">Modelo 3D cargado ✓</span>
+                      <button
+                        onClick={() => glbInputRef.current?.click()}
+                        className="text-xs text-blue-500 hover:underline"
+                      >
+                        Reemplazar
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          glbInputRef.current?.setAttribute("data-id", a.id);
+                          glbInputRef.current?.click();
+                        }}
+                        disabled={uploadingGlb === a.id}
+                        className="flex-1 flex items-center justify-center gap-2 text-sm font-inter border border-dashed border-blue-300 text-blue-600 rounded-xl px-4 py-2.5 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                      >
+                        {uploadingGlb === a.id ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Subiendo modelo...</>
+                        ) : (
+                          <><Box className="w-4 h-4" /> Subir modelo 3D (.glb)</>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setShowScanGuide(true)}
+                        className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-400 hover:text-deep-forest hover:border-deep-forest/30 transition-colors flex-shrink-0"
+                        title="¿Cómo obtengo un modelo 3D?"
+                      >
+                        <HelpCircle className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           ))
         )}
       </div>
+      {/* Input oculto para subida de GLB */}
+      <input
+        ref={glbInputRef}
+        type="file"
+        accept=".glb,.gltf"
+        className="hidden"
+        onChange={(e) => {
+          const id = glbInputRef.current?.getAttribute("data-id");
+          const appliance = appliances.find((a) => a.id === id);
+          if (appliance) handleGlbUpload(e, appliance);
+        }}
+      />
+
+      <ScanGuideModal open={showScanGuide} onClose={() => setShowScanGuide(false)} />
     </div>
   );
 }

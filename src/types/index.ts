@@ -25,6 +25,7 @@ export interface Appliance {
   category: string;
   manual: string;
   location?: string | null;
+  glbUrl?: string | null;
   createdAt: Date;
 }
 

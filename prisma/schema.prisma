@@ -37,6 +37,7 @@ model Appliance {
   category   String
   manual     String
   location   String?
+  glbUrl     String?
   createdAt  DateTime      @default(now())
   property   Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   chunks     ManualChunk[]
