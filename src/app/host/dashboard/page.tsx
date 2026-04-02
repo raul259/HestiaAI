@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
-import { Building2, AlertCircle, Wrench, ArrowRight, Plus, ExternalLink, Leaf, Car, Clock, MessageSquare } from "lucide-react";
+import { Building2, AlertCircle, Wrench, ArrowRight, Plus, ExternalLink, Leaf, Car, Clock, MessageSquare, TrendingUp } from "lucide-react";
 import LogoutButton from "@/components/host/LogoutButton";
 import RealtimeIncidents from "@/components/host/RealtimeIncidents";
+import IncidentChart from "@/components/host/IncidentChart";
 
 export const dynamic = "force-dynamic";
 
@@ -98,6 +99,21 @@ export default async function DashboardPage() {
     .filter((t) => t.count > 0)
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
+
+  // Gráfico: agrupar incidencias por semana (últimas 8 semanas)
+  const now = new Date();
+  const weeklyData = Array.from({ length: 8 }, (_, i) => {
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - (7 * (7 - i)));
+    weekStart.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 7);
+    const label = `${weekStart.getDate()}/${weekStart.getMonth() + 1}`;
+    const incidencias = allIncidents.filter(
+      (inc) => inc.createdAt >= weekStart && inc.createdAt < weekEnd
+    ).length;
+    return { week: label, incidencias };
+  });
 
   // Mapa propertyId → nombre para el componente Realtime
   const propertyNames = Object.fromEntries(
@@ -259,6 +275,17 @@ export default async function DashboardPage() {
             initialIncidents={incidents}
             propertyNames={propertyNames}
           />
+        </div>
+
+        {/* Gráfico temporal */}
+        <div>
+          <h2 className="font-outfit font-semibold text-xl text-deep-forest mb-4 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-electric-mint" />
+            Evolución de incidencias (últimas 8 semanas)
+          </h2>
+          <div className="card">
+            <IncidentChart data={weeklyData} />
+          </div>
         </div>
 
         {/* ESG */}

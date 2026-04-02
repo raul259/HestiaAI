@@ -152,6 +152,7 @@ export default function IncidentList({ incidents: initial }: Props) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const filtered = useMemo(() => incidents.filter((inc) => {
     const matchesSearch = search === "" ||
@@ -163,6 +164,7 @@ export default function IncidentList({ incidents: initial }: Props) {
   }), [incidents, search, statusFilter, priorityFilter]);
 
   const updateStatus = async (id: string, status: string) => {
+    setUpdatingId(id);
     await fetch("/api/incidents", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -171,6 +173,7 @@ export default function IncidentList({ incidents: initial }: Props) {
     setIncidents((prev) =>
       prev.map((i) => (i.id === id ? { ...i, status } : i))
     );
+    setUpdatingId(null);
   };
 
   if (incidents.length === 0) {
@@ -269,17 +272,23 @@ export default function IncidentList({ incidents: initial }: Props) {
               {incident.status === "open" && (
                 <button
                   onClick={() => updateStatus(incident.id, "in_progress")}
-                  className="text-xs font-inter text-yellow-600 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-1 hover:bg-yellow-100 transition-colors"
+                  disabled={updatingId === incident.id}
+                  className="text-xs font-inter text-yellow-600 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-1 hover:bg-yellow-100 transition-colors disabled:opacity-50 flex items-center gap-1"
                 >
-                  En proceso
+                  {updatingId === incident.id
+                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                    : "En proceso"}
                 </button>
               )}
               {(incident.status === "open" || incident.status === "in_progress") && (
                 <button
                   onClick={() => updateStatus(incident.id, "resolved")}
-                  className="text-xs font-inter text-green-600 bg-green-50 border border-green-200 rounded-lg px-3 py-1 hover:bg-green-100 transition-colors"
+                  disabled={updatingId === incident.id}
+                  className="text-xs font-inter text-green-600 bg-green-50 border border-green-200 rounded-lg px-3 py-1 hover:bg-green-100 transition-colors disabled:opacity-50 flex items-center gap-1"
                 >
-                  Resolver
+                  {updatingId === incident.id
+                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                    : "Resolver"}
                 </button>
               )}
             </div>
