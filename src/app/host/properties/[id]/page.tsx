@@ -6,6 +6,7 @@ import ApplianceSection from "@/components/host/ApplianceSection";
 import IncidentList from "@/components/host/IncidentList";
 import QRCodeCard from "@/components/host/QRCodeCard";
 import PropertyStatusBadge from "@/components/host/PropertyStatusBadge";
+import DeletePropertyButton from "@/components/host/DeletePropertyButton";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,7 @@ export default async function PropertyDetailPage({
               Vista huésped
               <ExternalLink className="w-3 h-3" />
             </Link>
+            <DeletePropertyButton propertyId={property.id} />
           </div>
         </div>
       </header>
