@@ -123,7 +123,7 @@ export default function RealtimeIncidents({ initialIncidents, propertyNames }: P
       {/* Indicador de conexión realtime */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-outfit font-semibold text-xl text-deep-forest">
-          Incidencias recientes
+          Incidencias abiertas
         </h2>
         <div className="flex items-center gap-1.5">
           {connected ? (
