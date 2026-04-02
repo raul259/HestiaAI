@@ -188,6 +188,7 @@ export default function IncidentForm({ propertyId, onClose, onIncidentCreated }:
               </button>
               {photoPreview && (
                 <div className="mt-2 relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={photoPreview} alt="preview" className="w-full h-32 object-cover rounded-xl border border-gray-200" />
                   <button
                     type="button"

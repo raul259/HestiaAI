@@ -113,9 +113,9 @@ const STEPS = [
           <p className="font-medium text-deep-forest">En el panel del electrodoméstico:</p>
           <ol className="space-y-1 text-xs">
             <li>1. Expande el electrodoméstico que escaneaste</li>
-            <li>2. Pulsa el botón <strong>"Subir modelo 3D"</strong></li>
+            <li>2. Pulsa el botón <strong>&quot;Subir modelo 3D&quot;</strong></li>
             <li>3. Selecciona el archivo .glb descargado</li>
-            <li>4. Espera la subida — aparecerá el badge "Modelo 3D ✓"</li>
+            <li>4. Espera la subida — aparecerá el badge &quot;Modelo 3D ✓&quot;</li>
           </ol>
         </div>
         <p className="text-xs text-gray-400">
