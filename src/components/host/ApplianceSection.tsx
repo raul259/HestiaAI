@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Plus, Trash2, ChevronDown, ChevronUp, FileText, Upload, CheckCircle2, Box, HelpCircle, Loader2, MapPin } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, FileText, Upload, CheckCircle2, Box, HelpCircle, Loader2, MapPin, MessageSquare, Send, X } from "lucide-react";
 import { Appliance } from "@/types";
 import { getCategoryIcon } from "@/lib/utils";
 import ScanGuideModal from "./ScanGuideModal";
@@ -34,6 +34,10 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
   const [uploadingGlb, setUploadingGlb] = useState<string | null>(null);
   const [showScanGuide, setShowScanGuide] = useState(false);
   const [editingHotspots, setEditingHotspots] = useState<Appliance | null>(null);
+  const [testingAppliance, setTestingAppliance] = useState<Appliance | null>(null);
+  const [testQuestion, setTestQuestion] = useState("");
+  const [testAnswer, setTestAnswer] = useState("");
+  const [testLoading, setTestLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const glbInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
@@ -126,6 +130,29 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
     if (!confirm("¿Eliminar este electrodoméstico?")) return;
     await fetch(`/api/appliances?id=${id}`, { method: "DELETE" });
     setAppliances((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const handleTestQuestion = async () => {
+    if (!testQuestion.trim() || !testingAppliance) return;
+    setTestLoading(true);
+    setTestAnswer("");
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          propertyId,
+          sessionId: `host_test_${testingAppliance.id}`,
+          messages: [{ role: "user", content: testQuestion }],
+        }),
+      });
+      const data = await res.json();
+      setTestAnswer(data.reply ?? "Sin respuesta.");
+    } catch {
+      setTestAnswer("Error de conexión.");
+    } finally {
+      setTestLoading(false);
+    }
   };
 
   return (
@@ -333,13 +360,27 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
                   {/* Estado del manual */}
                   {a.manual ? (
                     <>
-                      <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-                        <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                        <span className="font-inter font-medium">Manual procesado y listo para responder preguntas del huésped</span>
+                      <div className="flex items-center justify-between gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                        <div className="flex items-center gap-2 text-sm text-green-700">
+                          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                          <span className="font-inter font-medium">Manual procesado</span>
+                        </div>
+                        <span className="text-xs font-inter text-green-600">
+                          Subido {new Date(a.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-50 rounded-xl px-4 py-2">
-                        <FileText className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span>{Math.round(a.manual.length / 5)} palabras aprox. · Gemini usará este contenido como contexto</span>
+                      <div className="flex items-center justify-between gap-2 bg-gray-50 rounded-xl px-4 py-2">
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                          <FileText className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span>{Math.round(a.manual.length / 5)} palabras aprox. · Listo para responder preguntas</span>
+                        </div>
+                        <button
+                          onClick={() => { setTestingAppliance(a); setTestQuestion(""); setTestAnswer(""); }}
+                          className="flex items-center gap-1.5 text-xs font-inter font-medium text-deep-forest border border-deep-forest/20 rounded-lg px-3 py-1.5 hover:bg-deep-forest hover:text-white transition-colors flex-shrink-0"
+                        >
+                          <MessageSquare className="w-3 h-3" />
+                          Probar pregunta
+                        </button>
                       </div>
                     </>
                   ) : (
@@ -424,6 +465,50 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
           appliance={editingHotspots}
           onClose={() => setEditingHotspots(null)}
         />
+      )}
+
+      {/* Mini-modal: probar pregunta */}
+      {testingAppliance && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col gap-4 p-5">
+            <div className="flex items-center justify-between">
+              <h3 className="font-outfit font-semibold text-deep-forest">
+                Probar: {testingAppliance.name}
+              </h3>
+              <button
+                onClick={() => setTestingAppliance(null)}
+                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs font-inter text-gray-400">
+              Escribe una pregunta como si fueras el huésped — la IA responderá usando el manual de este electrodoméstico.
+            </p>
+            <div className="flex gap-2">
+              <input
+                value={testQuestion}
+                onChange={(e) => setTestQuestion(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleTestQuestion()}
+                placeholder="Ej: ¿Cómo pongo el modo eco?"
+                className="input-field text-sm py-2 flex-1"
+                disabled={testLoading}
+              />
+              <button
+                onClick={handleTestQuestion}
+                disabled={testLoading || !testQuestion.trim()}
+                className="w-10 h-10 bg-deep-forest text-electric-mint rounded-xl flex items-center justify-center hover:bg-opacity-90 disabled:opacity-40 transition-all flex-shrink-0"
+              >
+                {testLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </button>
+            </div>
+            {testAnswer && (
+              <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-inter text-slate-body leading-relaxed">
+                {testAnswer}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
