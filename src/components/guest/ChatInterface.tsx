@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Loader2, AlertTriangle, Box } from "lucide-react";
+import { Send, Bot, User, Loader2, AlertTriangle, Box, Wifi, Clock, Phone } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { ChatMessage, Appliance } from "@/types";
 import { cn } from "@/lib/utils";
@@ -19,34 +19,106 @@ function detectAppliance(text: string, appliances: Appliance[]): Appliance | nul
   return appliances.find((a) => lower.includes(a.name.toLowerCase())) ?? null;
 }
 
-const I18N: Record<string, { greeting: string; questions: string[] }> = {
+const QUICK_CARDS = [
+  {
+    title: "WiFi y acceso",
+    sub: "Clave y código",
+    Icon: Wifi,
+    bg: "bg-emerald-50",
+    iconColor: "text-emerald-700",
+    question: "¿Cuál es la contraseña del WiFi y el código de acceso al apartamento?",
+  },
+  {
+    title: "Check-in / out",
+    sub: "Horarios y normas",
+    Icon: Clock,
+    bg: "bg-amber-50",
+    iconColor: "text-amber-700",
+    question: "¿A qué hora es el check-in y el check-out? ¿Cuáles son las normas principales?",
+  },
+  {
+    title: "Electrodomésticos",
+    sub: "Guías en 3D",
+    Icon: Box,
+    bg: "bg-violet-50",
+    iconColor: "text-violet-700",
+    question: "¿Qué electrodomésticos hay en el apartamento y cómo funcionan?",
+  },
+  {
+    title: "Emergencias",
+    sub: "Teléfonos urgentes",
+    Icon: Phone,
+    bg: "bg-red-50",
+    iconColor: "text-red-600",
+    question: "¿Cuál es el teléfono de emergencias y cómo contacto con el anfitrión?",
+  },
+];
+
+const I18N: Record<string, { questions: string[] }> = {
   es: {
-    greeting: "¡Hola! Soy **Hestia**, tu asistente virtual para este alojamiento. Estoy aquí para ayudarte con cualquier duda sobre el apartamento, los electrodomésticos o cualquier incidencia. ¿En qué puedo ayudarte?",
-    questions: ["¿Cuál es la contraseña del WiFi?", "¿Cómo enciendo el aire acondicionado?", "¿A qué hora es el check-out?", "¿Dónde tiro la basura?"],
+    questions: [
+      "¿Cuál es el WiFi?",
+      "¿A qué hora el check-out?",
+      "¿Cómo funciona la lavadora?",
+      "¿Dónde tiro la basura?",
+      "¿Hay parking?",
+      "¿Cómo funciona la calefacción?",
+    ],
   },
   en: {
-    greeting: "Hi! I'm **Hestia**, your virtual assistant for this accommodation. I'm here to help with any questions about the apartment, appliances or any issue you may have. How can I help you?",
-    questions: ["What's the WiFi password?", "How do I turn on the air conditioning?", "What time is check-out?", "Where do I put the rubbish?"],
+    questions: [
+      "What's the WiFi?",
+      "What time is check-out?",
+      "How does the washing machine work?",
+      "Where do I put the rubbish?",
+      "Is there parking?",
+      "How does the heating work?",
+    ],
   },
   fr: {
-    greeting: "Bonjour ! Je suis **Hestia**, votre assistant virtuel pour ce logement. Je suis là pour vous aider avec toute question sur l'appartement, les appareils ou tout incident. Comment puis-je vous aider ?",
-    questions: ["Quel est le mot de passe WiFi ?", "Comment allumer la climatisation ?", "À quelle heure est le check-out ?", "Où jeter les ordures ?"],
+    questions: [
+      "Quel est le WiFi ?",
+      "À quelle heure le check-out ?",
+      "Comment marche le lave-linge ?",
+      "Où jeter les ordures ?",
+      "Y a-t-il un parking ?",
+    ],
   },
   de: {
-    greeting: "Hallo! Ich bin **Hestia**, Ihr virtueller Assistent für diese Unterkunft. Ich helfe Ihnen gerne bei Fragen zur Wohnung, den Geräten oder bei Problemen. Wie kann ich Ihnen helfen?",
-    questions: ["Was ist das WLAN-Passwort?", "Wie schalte ich die Klimaanlage ein?", "Wann ist der Check-out?", "Wo kommt der Müll hin?"],
+    questions: [
+      "Was ist das WLAN?",
+      "Wann ist Check-out?",
+      "Wie funktioniert die Waschmaschine?",
+      "Wohin mit dem Müll?",
+      "Gibt es Parkplätze?",
+    ],
   },
   it: {
-    greeting: "Ciao! Sono **Hestia**, il tuo assistente virtuale per questo alloggio. Sono qui per aiutarti con qualsiasi domanda sull'appartamento, gli elettrodomestici o qualsiasi problema. Come posso aiutarti?",
-    questions: ["Qual è la password del WiFi?", "Come accendo l'aria condizionata?", "A che ora è il check-out?", "Dove butto la spazzatura?"],
+    questions: [
+      "Qual è il WiFi?",
+      "A che ora il check-out?",
+      "Come funziona la lavatrice?",
+      "Dove butto la spazzatura?",
+      "C'è parcheggio?",
+    ],
   },
   pt: {
-    greeting: "Olá! Sou a **Hestia**, sua assistente virtual para este alojamento. Estou aqui para ajudá-lo com qualquer dúvida sobre o apartamento, eletrodomésticos ou qualquer incidente. Como posso ajudar?",
-    questions: ["Qual é a senha do WiFi?", "Como ligo o ar condicionado?", "A que horas é o check-out?", "Onde coloco o lixo?"],
+    questions: [
+      "Qual é o WiFi?",
+      "A que horas o check-out?",
+      "Como funciona a máquina de lavar?",
+      "Onde coloco o lixo?",
+      "Há estacionamento?",
+    ],
   },
   nl: {
-    greeting: "Hallo! Ik ben **Hestia**, uw virtuele assistent voor dit verblijf. Ik help u graag met vragen over het appartement, apparaten of problemen. Hoe kan ik u helpen?",
-    questions: ["Wat is het WiFi-wachtwoord?", "Hoe zet ik de airconditioning aan?", "Hoe laat is de check-out?", "Waar gooi ik het afval?"],
+    questions: [
+      "Wat is het WiFi?",
+      "Hoe laat is check-out?",
+      "Hoe werkt de wasmachine?",
+      "Waar gooi ik het afval?",
+      "Is er parkeren?",
+    ],
   },
 };
 
@@ -56,32 +128,38 @@ function detectLang(): string {
   return I18N[lang] ? lang : "en";
 }
 
-export default function ChatInterface({ propertyId, sessionId, onIncidentRequest, appliances = [], onOpenAppliance }: Props) {
+export default function ChatInterface({
+  propertyId,
+  sessionId,
+  onIncidentRequest,
+  appliances = [],
+  onOpenAppliance,
+}: Props) {
   const lang = detectLang();
-  const { greeting, questions } = I18N[lang];
+  const { questions } = I18N[lang];
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: "assistant", content: greeting },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
 
-  // Recuperar conversación guardada al montar
   useEffect(() => {
     fetch(`/api/chat?sessionId=${sessionId}&propertyId=${propertyId}`)
       .then((r) => r.json())
       .then((data) => {
         if (data.messages?.length) {
-          setMessages([{ role: "assistant", content: greeting }, ...data.messages]);
+          setMessages(data.messages);
         }
       })
       .catch(() => {})
       .finally(() => setHistoryLoaded(true));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const chatStarted = messages.some((m) => m.role === "user");
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -109,26 +187,17 @@ export default function ChatInterface({ propertyId, sessionId, onIncidentRequest
 
       const data = await res.json();
       if (data.reply) {
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: data.reply },
-        ]);
+        setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
       } else {
         setMessages((prev) => [
           ...prev,
-          {
-            role: "assistant",
-            content: "Lo siento, ha ocurrido un error. Por favor, inténtalo de nuevo.",
-          },
+          { role: "assistant", content: "Lo siento, ha ocurrido un error. Por favor, inténtalo de nuevo." },
         ]);
       }
     } catch {
       setMessages((prev) => [
         ...prev,
-        {
-          role: "assistant",
-          content: "Error de conexión. Comprueba tu internet e inténtalo de nuevo.",
-        },
+        { role: "assistant", content: "Error de conexión. Comprueba tu internet e inténtalo de nuevo." },
       ]);
     } finally {
       setLoading(false);
@@ -138,90 +207,127 @@ export default function ChatInterface({ propertyId, sessionId, onIncidentRequest
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin">
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={cn(
-              "flex gap-3 max-w-[85%]",
-              msg.role === "user" ? "ml-auto flex-row-reverse" : ""
-            )}
-          >
-            <div
-              className={cn(
-                "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5",
-                msg.role === "user"
-                  ? "bg-deep-forest text-electric-mint"
-                  : "bg-electric-mint text-deep-forest"
-              )}
-            >
-              {msg.role === "user" ? (
-                <User className="w-4 h-4" />
-              ) : (
-                <Bot className="w-4 h-4" />
-              )}
-            </div>
-            <div className="space-y-2">
-              <div
-                className={cn(
-                  "rounded-2xl px-4 py-3 text-sm font-inter leading-relaxed",
-                  msg.role === "user"
-                    ? "bg-deep-forest text-off-white rounded-tr-sm"
-                    : "bg-white border border-gray-100 text-slate-body rounded-tl-sm shadow-sm"
-                )}
-              >
-                <ReactMarkdown
-                  components={{
-                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                    ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
-                    ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
-                    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                    code: ({ children }) => (
-                      <code className="bg-gray-100 rounded px-1 text-xs font-mono">{children}</code>
-                    ),
-                  }}
-                >
-                  {msg.content}
-                </ReactMarkdown>
-              </div>
-              {msg.role === "assistant" && onOpenAppliance && (() => {
-                const found = detectAppliance(msg.content, appliances);
-                return found ? (
-                  <button
-                    onClick={() => onOpenAppliance(found)}
-                    className="flex items-center gap-1.5 text-xs font-inter font-medium text-electric-mint bg-electric-mint/10 hover:bg-electric-mint/20 border border-electric-mint/30 px-3 py-1.5 rounded-full transition-colors"
-                  >
-                    <Box className="w-3 h-3" />
-                    Ver {found.name} en 3D
-                  </button>
-                ) : null;
-              })()}
-            </div>
+      {/* Welcome banner — solo cuando no hay historial de chat */}
+      {!chatStarted && historyLoaded && (
+        <div className="bg-[#1B3022] px-4 py-3 flex items-center gap-3 flex-shrink-0">
+          <div className="w-8 h-8 rounded-full bg-electric-mint flex items-center justify-center flex-shrink-0">
+            <Bot className="w-4 h-4 text-deep-forest" />
           </div>
-        ))}
+          <p className="text-sm text-white/90 leading-snug font-inter">
+            Hola, soy <strong className="text-white">Hestia</strong>. Estoy aquí 24h para cualquier duda del apartamento.
+          </p>
+        </div>
+      )}
 
-        {loading && (
-          <div className="flex gap-3 max-w-[85%]">
-            <div className="w-8 h-8 rounded-xl bg-electric-mint text-deep-forest flex items-center justify-center flex-shrink-0">
-              <Bot className="w-4 h-4" />
-            </div>
-            <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-electric-mint" />
-              <span className="text-sm text-gray-400 font-inter">Pensando...</span>
-            </div>
+      <div className="flex-1 overflow-y-auto scrollbar-thin">
+        {/* Grid de accesos rápidos — se oculta al iniciar el chat */}
+        {!chatStarted && historyLoaded && (
+          <div className="grid grid-cols-2 gap-2 p-3 bg-off-white">
+            {QUICK_CARDS.map((card) => (
+              <button
+                key={card.title}
+                onClick={() => sendMessage(card.question)}
+                className="bg-white border border-gray-100 rounded-xl p-3 text-left active:scale-95 transition-transform hover:border-electric-mint/50 hover:bg-electric-mint/5"
+              >
+                <div className={`w-7 h-7 ${card.bg} rounded-lg flex items-center justify-center mb-2`}>
+                  <card.Icon className={`w-4 h-4 ${card.iconColor}`} />
+                </div>
+                <p className="text-xs font-medium text-deep-forest leading-tight font-inter">{card.title}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5 font-inter">{card.sub}</p>
+              </button>
+            ))}
           </div>
         )}
 
-        <div ref={bottomRef} />
+        {/* Mensajes */}
+        <div className="p-4 space-y-4">
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={cn(
+                "flex gap-3 max-w-[85%]",
+                msg.role === "user" ? "ml-auto flex-row-reverse" : ""
+              )}
+            >
+              <div
+                className={cn(
+                  "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5",
+                  msg.role === "user"
+                    ? "bg-deep-forest text-electric-mint"
+                    : "bg-electric-mint text-deep-forest"
+                )}
+              >
+                {msg.role === "user" ? (
+                  <User className="w-4 h-4" />
+                ) : (
+                  <Bot className="w-4 h-4" />
+                )}
+              </div>
+              <div className="space-y-2">
+                <div
+                  className={cn(
+                    "rounded-2xl px-4 py-3 text-sm font-inter leading-relaxed",
+                    msg.role === "user"
+                      ? "bg-deep-forest text-off-white rounded-tr-sm"
+                      : "bg-white border border-gray-100 text-slate-body rounded-tl-sm shadow-sm"
+                  )}
+                >
+                  <ReactMarkdown
+                    components={{
+                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                      ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
+                      ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                      code: ({ children }) => (
+                        <code className="bg-gray-100 rounded px-1 text-xs font-mono">{children}</code>
+                      ),
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
+                </div>
+                {msg.role === "assistant" &&
+                  onOpenAppliance &&
+                  (() => {
+                    const found = detectAppliance(msg.content, appliances);
+                    return found ? (
+                      <button
+                        onClick={() => onOpenAppliance(found)}
+                        className="flex items-center gap-1.5 text-xs font-inter font-medium text-electric-mint bg-electric-mint/10 hover:bg-electric-mint/20 border border-electric-mint/30 px-3 py-1.5 rounded-full transition-colors"
+                      >
+                        <Box className="w-3 h-3" />
+                        Ver {found.name} en 3D
+                      </button>
+                    ) : null;
+                  })()}
+              </div>
+            </div>
+          ))}
+
+          {loading && (
+            <div className="flex gap-3 max-w-[85%]">
+              <div className="w-8 h-8 rounded-xl bg-electric-mint text-deep-forest flex items-center justify-center flex-shrink-0">
+                <Bot className="w-4 h-4" />
+              </div>
+              <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-electric-mint" />
+                <span className="text-sm text-gray-400 font-inter">Pensando...</span>
+              </div>
+            </div>
+          )}
+
+          <div ref={bottomRef} />
+        </div>
       </div>
 
-      {messages.length === 1 && historyLoaded && (
-        <div className="px-4 pb-3 flex flex-wrap gap-2">
+      {/* Pills de sugerencias horizontales — solo antes de iniciar chat */}
+      {!chatStarted && historyLoaded && (
+        <div className="flex gap-2 overflow-x-auto px-3 py-2 bg-white border-t border-gray-100 flex-shrink-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {questions.map((q, i) => (
             <button
               key={i}
               onClick={() => sendMessage(q)}
-              className="text-xs font-inter bg-electric-mint/10 text-deep-forest border border-electric-mint/30 rounded-full px-3 py-1.5 hover:bg-electric-mint/20 transition-colors"
+              className="whitespace-nowrap text-[11px] px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 bg-white flex-shrink-0 active:bg-electric-mint/20 active:border-electric-mint active:text-deep-forest transition-colors"
             >
               {q}
             </button>
@@ -229,7 +335,7 @@ export default function ChatInterface({ propertyId, sessionId, onIncidentRequest
         </div>
       )}
 
-      <div className="border-t border-gray-100 p-4 space-y-3">
+      <div className="border-t border-gray-100 p-4 space-y-3 flex-shrink-0">
         <button
           onClick={onIncidentRequest}
           className="w-full flex items-center justify-center gap-2 text-sm font-inter text-orange-600 bg-orange-50 border border-orange-200 rounded-xl py-2.5 hover:bg-orange-100 transition-colors"
