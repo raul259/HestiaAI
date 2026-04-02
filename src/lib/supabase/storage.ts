@@ -9,24 +9,25 @@ function getServiceClient() {
 
 const BUCKET = "appliance-models";
 
-export async function uploadGLB(
-  file: File,
+export async function createGLBSignedUploadUrl(
   propertyId: string,
   applianceId: string
-): Promise<string> {
+): Promise<{ signedUrl: string; path: string }> {
   const supabase = getServiceClient();
-  const fileName = `${propertyId}/${applianceId}/model.glb`;
+  const path = `${propertyId}/${applianceId}/model.glb`;
 
-  const bytes = await file.arrayBuffer();
-  const { error } = await supabase.storage
+  const { data, error } = await supabase.storage
     .from(BUCKET)
-    .upload(fileName, bytes, {
-      contentType: "model/gltf-binary",
-      upsert: true,
-    });
+    .createSignedUploadUrl(path, { upsert: true });
 
-  if (error) throw new Error(error.message);
+  if (error || !data) throw new Error(error?.message ?? "Error generando URL firmada");
 
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(fileName);
+  return { signedUrl: data.signedUrl, path };
+}
+
+export function getGLBPublicUrl(propertyId: string, applianceId: string): string {
+  const supabase = getServiceClient();
+  const path = `${propertyId}/${applianceId}/model.glb`;
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
 }

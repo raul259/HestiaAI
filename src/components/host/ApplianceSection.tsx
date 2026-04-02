@@ -128,24 +128,41 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
     }
 
     setUploadingGlb(appliance.id);
-    const data = new FormData();
-    data.append("glb", file);
-    data.append("applianceId", appliance.id);
-    data.append("propertyId", propertyId);
+    if (glbInputRef.current) glbInputRef.current.value = "";
 
-    const res = await fetch("/api/appliances/upload-glb", { method: "POST", body: data });
-    const json = await res.json();
-
-    if (res.ok) {
-      setAppliances((prev) =>
-        prev.map((a) => (a.id === appliance.id ? { ...a, glbUrl: json.glbUrl } : a))
+    try {
+      // 1. Pedir signed URL al servidor
+      const signedRes = await fetch(
+        `/api/appliances/upload-glb?applianceId=${appliance.id}&propertyId=${propertyId}`
       );
-    } else {
-      alert(json.error ?? "Error al subir el modelo 3D.");
+      const { signedUrl, error: signedError } = await signedRes.json();
+      if (!signedRes.ok || !signedUrl) throw new Error(signedError ?? "Error obteniendo URL");
+
+      // 2. Subir directamente a Supabase desde el cliente (sin pasar por Vercel)
+      const uploadRes = await fetch(signedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "model/gltf-binary" },
+        body: file,
+      });
+      if (!uploadRes.ok) throw new Error("Error subiendo a Supabase Storage");
+
+      // 3. Notificar al servidor para actualizar la BD
+      const patchRes = await fetch("/api/appliances/upload-glb", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applianceId: appliance.id, propertyId }),
+      });
+      const patchJson = await patchRes.json();
+      if (!patchRes.ok) throw new Error(patchJson.error ?? "Error actualizando BD");
+
+      setAppliances((prev) =>
+        prev.map((a) => (a.id === appliance.id ? { ...a, glbUrl: patchJson.glbUrl } : a))
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error al subir el modelo 3D.");
     }
 
     setUploadingGlb(null);
-    if (glbInputRef.current) glbInputRef.current.value = "";
   };
 
   const handleDelete = async (id: string) => {

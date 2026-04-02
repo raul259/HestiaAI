@@ -1,39 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { uploadGLB } from "@/lib/supabase/storage";
+import { createGLBSignedUploadUrl, getGLBPublicUrl } from "@/lib/supabase/storage";
 
-const MAX_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
-
-export async function POST(req: NextRequest) {
+// GET → genera signed URL para subida directa cliente → Supabase
+export async function GET(req: NextRequest) {
   try {
-    const formData = await req.formData();
-    const file = formData.get("glb") as File | null;
-    const applianceId = formData.get("applianceId") as string | null;
-    const propertyId = formData.get("propertyId") as string | null;
+    const { searchParams } = new URL(req.url);
+    const applianceId = searchParams.get("applianceId");
+    const propertyId = searchParams.get("propertyId");
 
-    if (!file || !applianceId || !propertyId) {
+    if (!applianceId || !propertyId) {
       return NextResponse.json({ error: "Faltan campos obligatorios." }, { status: 400 });
     }
 
-    if (file.size > MAX_SIZE_BYTES) {
-      return NextResponse.json({ error: "El archivo supera el límite de 50 MB." }, { status: 400 });
+    const { signedUrl, path } = await createGLBSignedUploadUrl(propertyId, applianceId);
+    return NextResponse.json({ signedUrl, path });
+  } catch (error) {
+    console.error("[UPLOAD GLB GET]", error);
+    return NextResponse.json({ error: "Error generando URL de subida." }, { status: 500 });
+  }
+}
+
+// PATCH → cliente confirma subida completada → actualizamos BD con URL pública
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { applianceId, propertyId } = body;
+
+    if (!applianceId || !propertyId) {
+      return NextResponse.json({ error: "Faltan campos obligatorios." }, { status: 400 });
     }
 
-    const ext = file.name.split(".").pop()?.toLowerCase();
-    if (ext !== "glb" && ext !== "gltf") {
-      return NextResponse.json({ error: "Solo se admiten archivos .glb o .gltf." }, { status: 400 });
-    }
-
-    const publicUrl = await uploadGLB(file, propertyId, applianceId);
+    const glbUrl = getGLBPublicUrl(propertyId, applianceId);
 
     await prisma.appliance.update({
       where: { id: applianceId },
-      data: { glbUrl: publicUrl },
+      data: { glbUrl },
     });
 
-    return NextResponse.json({ glbUrl: publicUrl });
+    return NextResponse.json({ glbUrl });
   } catch (error) {
-    console.error("[UPLOAD GLB]", error);
-    return NextResponse.json({ error: "Error al subir el modelo 3D." }, { status: 500 });
+    console.error("[UPLOAD GLB PATCH]", error);
+    return NextResponse.json({ error: "Error actualizando modelo." }, { status: 500 });
   }
 }
