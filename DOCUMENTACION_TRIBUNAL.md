@@ -392,6 +392,9 @@ NEXT_PUBLIC_APP_URL   — URL base de la app (http://localhost:3000 en dev)
 | Categorización automática de incidencias | — | ✅ Hecho |
 | Dashboard ESG (CO₂, visitas, resolución) | 26/04 | ✅ Hecho |
 | Analytics preguntas frecuentes | — | ✅ Hecho |
+| Subida de GLB a Supabase Storage | — | ✅ Hecho |
+| Guía de escaneo 3D (ScanGuideModal) | — | ✅ Hecho |
+| Hotspots sobre modelo 3D | — | ✅ Hecho |
 | Three.js avanzado (raycasting) | 12/04 | ⏳ Pendiente |
 | Despliegue en producción (Vercel) | Antes de demo | ⏳ Pendiente |
 | Vídeo demo | 02/05 | ⏳ Pendiente |
@@ -559,3 +562,116 @@ Proceso de cálculo (servidor, sin llamadas a la IA):
 
 **Archivos:**
 - `src/app/host/dashboard/page.tsx` — cálculo ESG + análisis de conversaciones + UI de ambas secciones
+
+---
+
+## 21. Subida de modelos 3D GLB por el anfitrión
+
+El anfitrión puede subir el modelo 3D real de cada electrodoméstico. El flujo es externo (genera el GLB con KIRI Engine en su móvil) e interno (lo sube desde el panel).
+
+```
+Anfitrión expande un electrodoméstico en el panel
+→ Pulsa "Subir modelo 3D (.glb)"
+→ Selecciona el archivo .glb (max 50 MB, solo .glb / .gltf)
+→ POST /api/appliances/upload-glb (FormData: glb, applianceId, propertyId)
+→ En el servidor:
+   1. Validación de tamaño y extensión
+   2. file.arrayBuffer() → Supabase Storage (bucket "appliance-models", ruta {propertyId}/{applianceId}/model.glb)
+   3. getPublicUrl() → URL pública permanente
+   4. prisma.appliance.update({ glbUrl })
+→ ApplianceSection actualiza el estado local → badge "Modelo 3D ✓"
+→ En el visor del huésped: GLTFLoader carga glbUrl en lugar del modelo genérico por categoría
+```
+
+**Decisión de diseño — GLB externo vs integración KIRI Engine:**
+Se optó por flujo externo (el anfitrión genera el GLB con su móvil y lo sube). La integración directa de fotogrametría dentro de la app requeriría una API de pago y añade complejidad innecesaria para el MVP del tribunal.
+
+**Infraestructura:**
+- Bucket `appliance-models` en Supabase Storage (público — URLs permanentes sin expiración)
+- Cliente con `SUPABASE_SERVICE_ROLE_KEY` para bypasear RLS en subidas desde API routes
+- Si no hay GLB subido, el visor usa el modelo genérico mapeado por categoría (`/public/models/*.glb`)
+
+**Archivos:**
+- `src/app/api/appliances/upload-glb/route.ts` — endpoint POST con validaciones
+- `src/lib/supabase/storage.ts` — helper `uploadGLB()` con service_role client
+- `src/components/guest/ApplianceViewer.tsx` — `appliance.glbUrl || getModelPath(category)`
+- `src/components/host/ApplianceSection.tsx` — botón de subida + badge de estado
+
+---
+
+## 22. Guía de escaneo 3D (ScanGuideModal)
+
+Modal de 5 pasos que explica al anfitrión cómo generar un modelo 3D de calidad con su móvil usando KIRI Engine.
+
+**Por qué es necesaria:** El anfitrión no es técnico. Sin guía, los GLBs resultantes tendrán artefactos (reflejos, geometría rota) porque el usuario no sabe que debe dar 3 vueltas completas, solapar fotos al 70% o evitar el zoom. Una guía clara dentro de la app reduce la fricción y mejora la calidad de los modelos.
+
+**Estructura de los 5 pasos:**
+
+| Paso | Título | Contenido clave |
+|---|---|---|
+| 1 | Elige la app | KIRI Engine (recomendada, gratis, Android+iOS) · Scaniverse (alternativa iOS) |
+| 2 | Prepara el electrodoméstico | Buena luz · espacio libre · puertas cerradas · sin reflejos |
+| 3 | Fotografía el objeto | 40-60 fotos · 3 alturas · 70% solapamiento · sin zoom |
+| 4 | Genera en KIRI Engine | Photo Scan → procesar → exportar como GLB |
+| 5 | Sube a Hestia IA | Drop zone del formulario → badge "Modelo 3D ✓" |
+
+**Acceso:** Botón `?` (HelpCircle) junto al botón "Subir modelo 3D" en el panel del electrodoméstico. Se abre directamente cuando el electrodoméstico aún no tiene GLB.
+
+**Archivo:** `src/components/host/ScanGuideModal.tsx` — stepper con dots de progreso clicables, navegación Anterior/Siguiente, botón "Ir al formulario" en el último paso
+
+---
+
+## 23. Hotspots — Puntos de interés sobre el modelo 3D
+
+El anfitrión puede marcar puntos específicos sobre el modelo 3D de cada electrodoméstico. Los huéspedes ven esos puntos como esferas rojas y al hacer click aparece una etiqueta explicativa.
+
+**Por qué es el diferenciador clave frente a competidores:** Ningún competidor (Enso Connect, Hostfully, Touch Stay) tiene visor 3D. Dentro del propio visor, los hotspots elevan la propuesta de valor — en lugar de decir "pulsa el botón rojo de la derecha", Hestia IA puede señalarlo físicamente en el modelo 3D del electrodoméstico real de ese apartamento.
+
+### Flujo del anfitrión (modo edición)
+
+```
+Electrodoméstico con GLB → botón "Editar puntos de interés"
+→ Abre ApplianceHotspotEditor (modal con Three.js)
+→ Se carga el modelo GLB del anfitrión
+→ Anfitrión hace click sobre el modelo:
+   → raycaster.intersectObjects(modelMeshes, true) → intersects[0].point (Vector3 world space)
+   → Input flotante aparece cerca del click
+   → Anfitrión escribe la etiqueta ("Botón de encendido")
+   → POST /api/appliances/hotspots { applianceId, label, positionX, positionY, positionZ }
+   → Esfera roja aparece en el punto marcado
+→ Lista de hotspots debajo del canvas con botón de eliminar
+→ DELETE /api/appliances/hotspots?id=xxx → esfera eliminada del canvas y de la lista
+```
+
+### Flujo del huésped (modo lectura)
+
+```
+Huésped abre el visor 3D de un electrodoméstico
+→ ApplianceViewer carga el modelo GLB
+→ Tras cargar: GET /api/appliances/hotspots?applianceId=xxx
+→ Por cada hotspot: THREE.SphereGeometry(0.05) + MeshBasicMaterial(color: #e24b4a)
+→ sphere.position.set(positionX, positionY, positionZ)  ← coordenadas world space
+→ sphere.userData = { label }
+→ Huésped hace click sobre una esfera:
+   → raycaster.intersectObjects(hotspotMeshes) → label del userData
+   → Tooltip oscuro aparece encima de la esfera con la etiqueta
+```
+
+**Por qué las coordenadas son estables entre sesiones:** Las posiciones se guardan en world space después de aplicar el escalado y centrado del modelo (`scale = 1.6 / maxDim`). Como el mismo GLB siempre produce el mismo `maxDim` y `center`, el world space es idéntico en cada carga.
+
+**Modelo de datos:**
+```
+ApplianceHotspot {
+  id          — CUID
+  applianceId — FK a Appliance (CASCADE delete)
+  label       — "Botón de encendido"
+  positionX/Y/Z — coordenadas Three.js world space
+  createdAt
+}
+```
+
+**Archivos:**
+- `prisma/schema.prisma` — modelo `ApplianceHotspot`
+- `src/app/api/appliances/hotspots/route.ts` — GET, POST, DELETE
+- `src/components/host/ApplianceHotspotEditor.tsx` — editor Three.js con raycasting + input flotante
+- `src/components/guest/ApplianceViewer.tsx` — carga y renderiza hotspots + tooltip on click
