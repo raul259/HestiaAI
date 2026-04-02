@@ -41,6 +41,18 @@ model Appliance {
   createdAt  DateTime      @default(now())
   property   Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   chunks     ManualChunk[]
+  hotspots   ApplianceHotspot[]
+}
+
+model ApplianceHotspot {
+  id          String    @id @default(cuid())
+  applianceId String
+  label       String
+  positionX   Float
+  positionY   Float
+  positionZ   Float
+  createdAt   DateTime  @default(now())
+  appliance   Appliance @relation(fields: [applianceId], references: [id], onDelete: Cascade)
 }
 
 model ManualChunk {

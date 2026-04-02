@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Plus, Trash2, ChevronDown, ChevronUp, FileText, Upload, CheckCircle2, Box, HelpCircle, Loader2 } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, FileText, Upload, CheckCircle2, Box, HelpCircle, Loader2, MapPin } from "lucide-react";
 import { Appliance } from "@/types";
 import { getCategoryIcon } from "@/lib/utils";
 import ScanGuideModal from "./ScanGuideModal";
+import ApplianceHotspotEditor from "./ApplianceHotspotEditor";
 
 const CATEGORIES = [
   { value: "tv", label: "Televisión" },
@@ -30,8 +31,9 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
   const [saving, setSaving] = useState(false);
   const [extrayendo, setExtrayendo] = useState(false);
   const [pdfError, setPdfError] = useState("");
-  const [uploadingGlb, setUploadingGlb] = useState<string | null>(null); // applianceId en curso
+  const [uploadingGlb, setUploadingGlb] = useState<string | null>(null);
   const [showScanGuide, setShowScanGuide] = useState(false);
+  const [editingHotspots, setEditingHotspots] = useState<Appliance | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const glbInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
@@ -349,14 +351,26 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
 
                   {/* Estado del modelo 3D */}
                   {a.glbUrl ? (
-                    <div className="flex items-center gap-2 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
-                      <Box className="w-4 h-4 flex-shrink-0" />
-                      <span className="font-inter font-medium flex-1">Modelo 3D cargado ✓</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                        <Box className="w-4 h-4 flex-shrink-0" />
+                        <span className="font-inter font-medium flex-1">Modelo 3D cargado ✓</span>
+                        <button
+                          onClick={() => {
+                            glbInputRef.current?.setAttribute("data-id", a.id);
+                            glbInputRef.current?.click();
+                          }}
+                          className="text-xs text-blue-500 hover:underline"
+                        >
+                          Reemplazar
+                        </button>
+                      </div>
                       <button
-                        onClick={() => glbInputRef.current?.click()}
-                        className="text-xs text-blue-500 hover:underline"
+                        onClick={() => setEditingHotspots(a)}
+                        className="w-full flex items-center justify-center gap-2 text-sm font-inter text-deep-forest border border-deep-forest/20 rounded-xl px-4 py-2 hover:bg-deep-forest hover:text-white transition-colors"
                       >
-                        Reemplazar
+                        <MapPin className="w-4 h-4" />
+                        Editar puntos de interés
                       </button>
                     </div>
                   ) : (
@@ -404,6 +418,13 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
       />
 
       <ScanGuideModal open={showScanGuide} onClose={() => setShowScanGuide(false)} />
+
+      {editingHotspots && (
+        <ApplianceHotspotEditor
+          appliance={editingHotspots}
+          onClose={() => setEditingHotspots(null)}
+        />
+      )}
     </div>
   );
 }
