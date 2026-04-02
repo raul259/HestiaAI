@@ -32,6 +32,7 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
   const [extrayendo, setExtrayendo] = useState(false);
   const [pdfError, setPdfError] = useState("");
   const [uploadingGlb, setUploadingGlb] = useState<string | null>(null);
+  const [extractingForId, setExtractingForId] = useState<string | null>(null);
   const [showScanGuide, setShowScanGuide] = useState(false);
   const [editingHotspots, setEditingHotspots] = useState<Appliance | null>(null);
   const [testingAppliance, setTestingAppliance] = useState<Appliance | null>(null);
@@ -50,7 +51,7 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.manual) return;
+    if (!form.name) return;
     setSaving(true);
 
     const res = await fetch("/api/appliances", {
@@ -68,27 +69,48 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
     setSaving(false);
   };
 
-  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>, applianceId?: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setPdfError("");
-    setExtrayendo(true);
 
-    const data = new FormData();
-    data.append("pdf", file);
-
-    const res = await fetch("/api/upload-manual", { method: "POST", body: data });
-    const json = await res.json();
-
-    if (!res.ok) {
-      setPdfError(json.error || "Error al procesar el PDF.");
+    if (applianceId) {
+      // Modo async: electrodoméstico ya creado — extraer en background y hacer PATCH
+      setExtractingForId(applianceId);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      const data = new FormData();
+      data.append("pdf", file);
+      const res = await fetch("/api/upload-manual", { method: "POST", body: data });
+      const json = await res.json();
+      if (res.ok) {
+        await fetch("/api/appliances", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: applianceId, manual: json.texto }),
+        });
+        setAppliances((prev) =>
+          prev.map((a) => (a.id === applianceId ? { ...a, manual: json.texto } : a))
+        );
+      } else {
+        setPdfError(json.error || "Error al procesar el PDF.");
+      }
+      setExtractingForId(null);
     } else {
-      setForm((prev) => ({ ...prev, manual: json.texto }));
+      // Modo formulario: rellena el campo manual antes de guardar
+      setExtrayendo(true);
+      const data = new FormData();
+      data.append("pdf", file);
+      const res = await fetch("/api/upload-manual", { method: "POST", body: data });
+      const json = await res.json();
+      if (!res.ok) {
+        setPdfError(json.error || "Error al procesar el PDF.");
+      } else {
+        setForm((prev) => ({ ...prev, manual: json.texto }));
+      }
+      setExtrayendo(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
-
-    setExtrayendo(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleGlbUpload = async (e: React.ChangeEvent<HTMLInputElement>, appliance: Appliance) => {
@@ -247,6 +269,7 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
                     onChange={handlePdfUpload}
                     className="hidden"
                     id="pdf-upload"
+                    disabled={extrayendo}
                   />
                   <label
                     htmlFor="pdf-upload"
@@ -282,10 +305,9 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
               <textarea
                 value={form.manual}
                 onChange={(e) => setForm({ ...form, manual: e.target.value })}
-                placeholder="Escribe las instrucciones manualmente o sube un PDF para extraer el texto automáticamente..."
+                placeholder="Escribe las instrucciones manualmente o sube un PDF para extraer el texto automáticamente (opcional — puedes añadirlo después)..."
                 rows={6}
                 className="input-field text-sm resize-none"
-                required
               />
             </div>
             <div className="flex gap-3">
@@ -298,10 +320,10 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
               </button>
               <button
                 type="submit"
-                disabled={saving}
+                disabled={saving || extrayendo}
                 className="flex-1 btn-primary text-sm py-2 disabled:opacity-60"
               >
-                {saving ? "Guardando..." : "Guardar"}
+                {saving ? "Guardando..." : extrayendo ? "Extrayendo PDF..." : "Guardar"}
               </button>
             </div>
           </form>
@@ -383,10 +405,31 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
                         </button>
                       </div>
                     </>
+                  ) : extractingForId === a.id ? (
+                    <div className="flex items-center gap-3 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                      <Loader2 className="w-4 h-4 flex-shrink-0 animate-spin" />
+                      <span className="font-inter font-medium">Extrayendo manual del PDF...</span>
+                    </div>
                   ) : (
-                    <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                      <FileText className="w-4 h-4 flex-shrink-0" />
-                      <span className="font-inter">Sin manual — sube un PDF para activar el asistente en este electrodoméstico</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                        <FileText className="w-4 h-4 flex-shrink-0" />
+                        <span className="font-inter flex-1">Sin manual — sube un PDF para activar el asistente</span>
+                      </div>
+                      <label
+                        htmlFor={`pdf-existing-${a.id}`}
+                        className="flex items-center justify-center gap-2 text-sm font-inter border border-dashed border-amber-300 text-amber-700 rounded-xl px-4 py-2.5 hover:bg-amber-50 transition-colors cursor-pointer"
+                      >
+                        <Upload className="w-4 h-4" />
+                        Subir PDF ahora
+                      </label>
+                      <input
+                        id={`pdf-existing-${a.id}`}
+                        type="file"
+                        accept="application/pdf"
+                        className="hidden"
+                        onChange={(e) => handlePdfUpload(e, a.id)}
+                      />
                     </div>
                   )}
 

@@ -24,26 +24,52 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { propertyId, name, model, category, manual, location } = body;
 
-    if (!propertyId || !name || !category || !manual) {
+    if (!propertyId || !name || !category) {
       return NextResponse.json(
-        { error: "propertyId, nombre, categoría y manual son obligatorios." },
+        { error: "propertyId, nombre y categoría son obligatorios." },
         { status: 400 }
       );
     }
 
     const appliance = await prisma.appliance.create({
-      data: { propertyId, name, model, category, manual, location },
+      data: { propertyId, name, model, category, manual: manual ?? "", location },
     });
 
-    // Indexar el manual en chunks con embeddings para RAG (sin bloquear la respuesta)
-    indexAppliance(appliance.id, name, manual).catch((err) =>
-      console.error("[RAG] Error indexando manual:", err)
-    );
+    if (manual) {
+      indexAppliance(appliance.id, name, manual).catch((err) =>
+        console.error("[RAG] Error indexando manual:", err)
+      );
+    }
 
     return NextResponse.json(appliance, { status: 201 });
   } catch (error) {
     console.error("[APPLIANCES POST]", error);
     return NextResponse.json({ error: "Error al crear electrodoméstico." }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { id, manual } = body;
+
+    if (!id || !manual) {
+      return NextResponse.json({ error: "id y manual son obligatorios." }, { status: 400 });
+    }
+
+    const appliance = await prisma.appliance.update({
+      where: { id },
+      data: { manual },
+    });
+
+    indexAppliance(appliance.id, appliance.name, manual).catch((err) =>
+      console.error("[RAG] Error indexando manual:", err)
+    );
+
+    return NextResponse.json(appliance);
+  } catch (error) {
+    console.error("[APPLIANCES PATCH]", error);
+    return NextResponse.json({ error: "Error al actualizar manual." }, { status: 500 });
   }
 }
 
