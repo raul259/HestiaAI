@@ -12,6 +12,8 @@ interface Props {
   onIncidentRequest: () => void;
   appliances?: Appliance[];
   onOpenAppliance?: (appliance: Appliance) => void;
+  incidentCreatedTrigger?: number;
+  onViewIncidents?: () => void;
 }
 
 function detectAppliance(text: string, appliances: Appliance[]): Appliance | null {
@@ -128,12 +130,16 @@ function detectLang(): string {
   return I18N[lang] ? lang : "en";
 }
 
+const INCIDENT_MARKER = "__INCIDENT_CONFIRMED__";
+
 export default function ChatInterface({
   propertyId,
   sessionId,
   onIncidentRequest,
   appliances = [],
   onOpenAppliance,
+  incidentCreatedTrigger = 0,
+  onViewIncidents,
 }: Props) {
   const lang = detectLang();
   const { questions } = I18N[lang];
@@ -153,6 +159,16 @@ export default function ChatInterface({
       .finally(() => setHistoryLoaded(true));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Inyectar mensaje de confirmación cuando se crea una incidencia
+  useEffect(() => {
+    if (incidentCreatedTrigger === 0) return;
+    setMessages((prev) => [
+      ...prev,
+      { role: "assistant", content: INCIDENT_MARKER },
+    ]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incidentCreatedTrigger]);
 
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -264,42 +280,61 @@ export default function ChatInterface({
                 )}
               </div>
               <div className="space-y-2">
-                <div
-                  className={cn(
-                    "rounded-2xl px-4 py-3 text-sm font-inter leading-relaxed",
-                    msg.role === "user"
-                      ? "bg-deep-forest text-off-white rounded-tr-sm"
-                      : "bg-white border border-gray-100 text-slate-body rounded-tl-sm shadow-sm"
-                  )}
-                >
-                  <ReactMarkdown
-                    components={{
-                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                      ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
-                      ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
-                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                      code: ({ children }) => (
-                        <code className="bg-gray-100 rounded px-1 text-xs font-mono">{children}</code>
-                      ),
-                    }}
-                  >
-                    {msg.content}
-                  </ReactMarkdown>
-                </div>
-                {msg.role === "assistant" &&
-                  onOpenAppliance &&
-                  (() => {
-                    const found = detectAppliance(msg.content, appliances);
-                    return found ? (
+                {msg.content === INCIDENT_MARKER ? (
+                  <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm space-y-3">
+                    <p className="text-sm font-inter text-slate-body">
+                      ✅ Incidencia enviada. El anfitrión ha sido notificado y la revisará lo antes posible.
+                    </p>
+                    {onViewIncidents && (
                       <button
-                        onClick={() => onOpenAppliance(found)}
-                        className="flex items-center gap-1.5 text-xs font-inter font-medium text-electric-mint bg-electric-mint/10 hover:bg-electric-mint/20 border border-electric-mint/30 px-3 py-1.5 rounded-full transition-colors"
+                        onClick={onViewIncidents}
+                        className="flex items-center gap-1.5 text-xs font-inter font-medium text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200 px-3 py-1.5 rounded-full transition-colors"
                       >
-                        <Box className="w-3 h-3" />
-                        Ver {found.name} en 3D
+                        <AlertTriangle className="w-3 h-3" />
+                        Ver estado de mi incidencia
                       </button>
-                    ) : null;
-                  })()}
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <div
+                      className={cn(
+                        "rounded-2xl px-4 py-3 text-sm font-inter leading-relaxed",
+                        msg.role === "user"
+                          ? "bg-deep-forest text-off-white rounded-tr-sm"
+                          : "bg-white border border-gray-100 text-slate-body rounded-tl-sm shadow-sm"
+                      )}
+                    >
+                      <ReactMarkdown
+                        components={{
+                          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                          ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                          code: ({ children }) => (
+                            <code className="bg-gray-100 rounded px-1 text-xs font-mono">{children}</code>
+                          ),
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    </div>
+                    {msg.role === "assistant" &&
+                      onOpenAppliance &&
+                      (() => {
+                        const found = detectAppliance(msg.content, appliances);
+                        return found ? (
+                          <button
+                            onClick={() => onOpenAppliance(found)}
+                            className="flex items-center gap-1.5 text-xs font-inter font-medium text-electric-mint bg-electric-mint/10 hover:bg-electric-mint/20 border border-electric-mint/30 px-3 py-1.5 rounded-full transition-colors"
+                          >
+                            <Box className="w-3 h-3" />
+                            Ver {found.name} en 3D
+                          </button>
+                        ) : null;
+                      })()}
+                  </>
+                )}
               </div>
             </div>
           ))}

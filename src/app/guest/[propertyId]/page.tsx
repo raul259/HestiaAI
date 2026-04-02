@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import ChatInterface from "@/components/guest/ChatInterface";
 import IncidentForm from "@/components/guest/IncidentForm";
 import ApplianceModal from "@/components/guest/ApplianceModal";
+import GuestIncidents from "@/components/guest/GuestIncidents";
 import { Property, Appliance } from "@/types";
 
 function generateSessionId() {
@@ -32,6 +34,8 @@ export default function GuestPage({
   const [showIncident, setShowIncident] = useState(false);
   const [sessionId] = useState(getOrCreateSession);
   const [selectedAppliance, setSelectedAppliance] = useState<Appliance | null>(null);
+  const [incidentCreatedTrigger, setIncidentCreatedTrigger] = useState(0);
+  const [showIncidentsPanel, setShowIncidentsPanel] = useState(false);
 
   useEffect(() => {
     fetch(`/api/properties/${propertyId}`)
@@ -103,6 +107,8 @@ export default function GuestPage({
           onIncidentRequest={() => setShowIncident(true)}
           appliances={property.appliances ?? []}
           onOpenAppliance={(a) => setSelectedAppliance(a)}
+          incidentCreatedTrigger={incidentCreatedTrigger}
+          onViewIncidents={() => setShowIncidentsPanel(true)}
         />
       </div>
 
@@ -112,6 +118,7 @@ export default function GuestPage({
           onClose={() => setShowIncident(false)}
           onIncidentCreated={() => {
             setShowIncident(false);
+            setIncidentCreatedTrigger((n) => n + 1);
           }}
         />
       )}
@@ -121,6 +128,26 @@ export default function GuestPage({
           appliance={selectedAppliance}
           onClose={() => setSelectedAppliance(null)}
         />
+      )}
+
+      {/* Panel de incidencias del huésped */}
+      {showIncidentsPanel && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-t-2xl shadow-2xl max-h-[75vh] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <h2 className="font-outfit font-semibold text-deep-forest">Mis incidencias</h2>
+              <button
+                onClick={() => setShowIncidentsPanel(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1">
+              <GuestIncidents propertyId={propertyId} />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
