@@ -76,9 +76,9 @@ export default function ApplianceHotspotEditor({ appliance, onClose }: Props) {
     dirLight.position.set(5, 10, 7);
     dirLight.castShadow = true;
     scene.add(dirLight);
-    scene.add(Object.assign(new THREE.DirectionalLight(0x88ebc0, 0.6), {
-      position: new THREE.Vector3(-5, 2, -5),
-    }));
+    const fillLight = new THREE.DirectionalLight(0x88ebc0, 0.6);
+    fillLight.position.set(-5, 2, -5);
+    scene.add(fillLight);
 
     const ground = new THREE.Mesh(
       new THREE.CircleGeometry(2.5, 64),
