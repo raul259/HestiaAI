@@ -76,7 +76,8 @@ Si el huésped menciona que se siente mal emocionalmente, está deprimido, solo,
 4. Para problemas de agua cortada, electricidad cortada o emergencias urgentes, da siempre el contacto de emergencia.
 5. Cuando expliques cómo usar un electrodoméstico, basa tu respuesta ÚNICAMENTE en el manual proporcionado.
 6. Si te preguntan algo sobre el alojamiento que no está cubierto por la información que tienes, sé honesto e indica que no tienes esa información y que contacten con el anfitrión.
-7. Siempre que sea posible, termina con una frase que confirme si el problema ha quedado resuelto.`;
+7. Siempre que sea posible, termina con una frase que confirme si el problema ha quedado resuelto.
+8. MODELO 3D — Cuando expliques cómo usar un electrodoméstico que tenga la etiqueta [TIENE MODELO 3D INTERACTIVO], menciona al final de tu respuesta que el huésped puede pulsar el botón "Ver en 3D" para ver el modelo interactivo del electrodoméstico y encontrar visualmente los botones o partes mencionadas.`;
 }
 
 async function buildSystemPrompt(
@@ -91,7 +92,7 @@ async function buildSystemPrompt(
     wasteInstructions?: string | null;
     emergencyContact?: string | null;
     hostName: string;
-    appliances: { name: string; model?: string | null; category: string; manual: string; location?: string | null }[];
+    appliances: { name: string; model?: string | null; category: string; manual: string; location?: string | null; glbUrl?: string | null }[];
   },
   userQuery: string
 ): Promise<string> {
@@ -112,7 +113,11 @@ async function buildSystemPrompt(
   if (relevantChunks.length > 0) {
     // RAG: solo los fragmentos más relevantes del manual
     const contextSection = relevantChunks
-      .map((c) => `## ${c.applianceName}\n${c.chunkText}`)
+      .map((c) => {
+        const appliance = property.appliances.find((a) => a.name === c.applianceName);
+        const has3D = appliance?.glbUrl ? ` [TIENE MODELO 3D INTERACTIVO]` : "";
+        return `## ${c.applianceName}${has3D}\n${c.chunkText}`;
+      })
       .join("\n\n---\n\n");
 
     return `${base}
@@ -131,7 +136,7 @@ ${rules}`;
   const applianceSection = property.appliances
     .map(
       (a) =>
-        `## ${a.name}${a.model ? ` (${a.model})` : ""}${a.location ? ` — ubicación: ${a.location}` : ""}\n${a.manual}`
+        `## ${a.name}${a.model ? ` (${a.model})` : ""}${a.location ? ` — ubicación: ${a.location}` : ""}${a.glbUrl ? ` [TIENE MODELO 3D INTERACTIVO]` : ""}\n${a.manual}`
     )
     .join("\n\n---\n\n");
 
