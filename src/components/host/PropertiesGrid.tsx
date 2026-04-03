@@ -2,14 +2,27 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Building2, Plus, ExternalLink, Wrench, AlertCircle, Search } from "lucide-react";
+import { Building2, Plus, ExternalLink, Wrench, AlertCircle, Search, Clock } from "lucide-react";
+
+const INACTIVE_DAYS = 15;
 
 interface PropertyRow {
   id: string;
   name: string;
   address: string;
   status: string | null;
+  createdAt: Date | string;
+  conversations: { createdAt: Date | string }[];
   _count: { appliances: number; incidents: number };
+}
+
+function isInactive(property: PropertyRow): boolean {
+  const now = Date.now();
+  const created = new Date(property.createdAt).getTime();
+  if (now - created < INACTIVE_DAYS * 24 * 60 * 60 * 1000) return false;
+  if (property.conversations.length === 0) return true;
+  const lastConv = new Date(property.conversations[0].createdAt).getTime();
+  return now - lastConv > INACTIVE_DAYS * 24 * 60 * 60 * 1000;
 }
 
 interface Props {
@@ -100,6 +113,7 @@ export default function PropertiesGrid({ properties, openByProperty }: Props) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map((property) => {
             const openCount = openByProperty[property.id] ?? 0;
+            const inactive = isInactive(property);
             return (
               <div
                 key={property.id}
@@ -110,11 +124,19 @@ export default function PropertiesGrid({ properties, openByProperty }: Props) {
                     <div className="w-10 h-10 bg-deep-forest/10 rounded-xl flex items-center justify-center">
                       <Building2 className="w-5 h-5 text-deep-forest" />
                     </div>
-                    {openCount > 0 && (
-                      <span className="badge text-xs text-orange-600 bg-orange-50 border-orange-200">
-                        {openCount} abierta{openCount > 1 ? "s" : ""}
-                      </span>
-                    )}
+                    <div className="flex flex-col items-end gap-1">
+                      {openCount > 0 && (
+                        <span className="badge text-xs text-orange-600 bg-orange-50 border-orange-200">
+                          {openCount} abierta{openCount > 1 ? "s" : ""}
+                        </span>
+                      )}
+                      {inactive && (
+                        <span className="badge text-xs text-amber-700 bg-amber-50 border-amber-200 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          Sin actividad +{INACTIVE_DAYS}d
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <h2 className="font-outfit font-semibold text-deep-forest text-lg mb-1">
