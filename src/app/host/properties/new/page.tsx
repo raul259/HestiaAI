@@ -195,6 +195,7 @@ export default function NewPropertyPage() {
                   value={form.accessCode}
                   onChange={(e) => F("accessCode", e.target.value)}
                   placeholder="1234"
+                  maxLength={10}
                   className="input-field"
                 />
               </div>

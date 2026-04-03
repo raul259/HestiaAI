@@ -102,15 +102,32 @@ export async function PATCH(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
 
-    const { id, status } = await req.json();
+    const body = await req.json();
+    const { id, status, name, address, description, wifiName, wifiPassword, checkoutInstructions, wasteInstructions, emergencyContact, hostName, hostEmail, accessCode } = body;
+
+    if (!id) return NextResponse.json({ error: "ID requerido." }, { status: 400 });
+
+    const data: Record<string, unknown> = {};
     const VALID_STATUSES = ["active", "occupied", "inactive"];
-    if (!id || !VALID_STATUSES.includes(status)) {
-      return NextResponse.json({ error: "Datos inválidos." }, { status: 400 });
+    if (status !== undefined) {
+      if (!VALID_STATUSES.includes(status)) return NextResponse.json({ error: "Estado inválido." }, { status: 400 });
+      data.status = status;
     }
+    if (name !== undefined) data.name = name;
+    if (address !== undefined) data.address = address;
+    if (description !== undefined) data.description = description;
+    if (wifiName !== undefined) data.wifiName = wifiName;
+    if (wifiPassword !== undefined) data.wifiPassword = wifiPassword;
+    if (checkoutInstructions !== undefined) data.checkoutInstructions = checkoutInstructions;
+    if (wasteInstructions !== undefined) data.wasteInstructions = wasteInstructions;
+    if (emergencyContact !== undefined) data.emergencyContact = emergencyContact;
+    if (hostName !== undefined) data.hostName = hostName;
+    if (hostEmail !== undefined) data.hostEmail = hostEmail;
+    if (accessCode !== undefined) data.accessCode = accessCode;
 
     const property = await prisma.property.updateMany({
       where: { id, hostId: user.id },
-      data: { status },
+      data,
     });
 
     return NextResponse.json(property);

@@ -7,6 +7,7 @@ import IncidentList from "@/components/host/IncidentList";
 import QRCodeCard from "@/components/host/QRCodeCard";
 import PropertyStatusBadge from "@/components/host/PropertyStatusBadge";
 import DeletePropertyButton from "@/components/host/DeletePropertyButton";
+import EditPropertyModal from "@/components/host/EditPropertyModal";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,7 @@ export default async function PropertyDetailPage({
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <EditPropertyModal property={property} />
             <PropertyStatusBadge propertyId={property.id} initialStatus={property.status ?? "active"} />
             <Link
               href={`/guest/${property.id}`}
