@@ -150,7 +150,7 @@ export default function ApplianceViewer({ appliance }: Props) {
           .then((hs: Array<{ id: string; label: string; positionX: number; positionY: number; positionZ: number }>) => {
             for (const h of hs) {
               const sphere = new THREE.Mesh(
-                new THREE.SphereGeometry(0.02, 16, 16),
+                new THREE.SphereGeometry(0.01, 16, 16),
                 new THREE.MeshBasicMaterial({ color: 0xe24b4a })
               );
               sphere.position.set(h.positionX, h.positionY, h.positionZ);

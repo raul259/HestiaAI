@@ -195,7 +195,7 @@ export default function ApplianceHotspotEditor({ appliance, onClose }: Props) {
     hotspots.forEach((h) => {
       if (hotspotSpheresRef.current.find((e) => e.id === h.id)) return;
       const mesh = new THREE.Mesh(
-        new THREE.SphereGeometry(0.025, 16, 16),
+        new THREE.SphereGeometry(0.01, 16, 16),
         new THREE.MeshBasicMaterial({ color: 0xe24b4a })
       );
       mesh.position.set(h.positionX, h.positionY, h.positionZ);
