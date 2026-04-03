@@ -81,43 +81,43 @@ export default function EditPropertyModal({ property }: Props) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="block text-sm font-inter text-gray-600 mb-1.5">Nombre *</label>
-                  <input value={form.name} onChange={(e) => F("name", e.target.value)} className="input-field" />
+                  <input value={form.name} onChange={(e) => F("name", e.target.value)} maxLength={60} autoComplete="off" className="input-field" />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-sm font-inter text-gray-600 mb-1.5">Dirección *</label>
-                  <input value={form.address} onChange={(e) => F("address", e.target.value)} className="input-field" />
+                  <input value={form.address} onChange={(e) => F("address", e.target.value)} maxLength={120} autoComplete="off" className="input-field" />
                 </div>
                 <div>
                   <label className="block text-sm font-inter text-gray-600 mb-1.5">Red WiFi</label>
-                  <input value={form.wifiName} onChange={(e) => F("wifiName", e.target.value)} className="input-field" />
+                  <input value={form.wifiName} onChange={(e) => F("wifiName", e.target.value)} maxLength={60} autoComplete="off" className="input-field" />
                 </div>
                 <div>
                   <label className="block text-sm font-inter text-gray-600 mb-1.5">Contraseña WiFi</label>
-                  <input value={form.wifiPassword} onChange={(e) => F("wifiPassword", e.target.value)} className="input-field" />
+                  <input value={form.wifiPassword} onChange={(e) => F("wifiPassword", e.target.value)} maxLength={60} autoComplete="off" className="input-field" />
                 </div>
                 <div>
                   <label className="block text-sm font-inter text-gray-600 mb-1.5">Nombre anfitrión</label>
-                  <input value={form.hostName} onChange={(e) => F("hostName", e.target.value)} className="input-field" />
+                  <input value={form.hostName} onChange={(e) => F("hostName", e.target.value)} maxLength={60} autoComplete="off" className="input-field" />
                 </div>
                 <div>
                   <label className="block text-sm font-inter text-gray-600 mb-1.5">Email anfitrión</label>
-                  <input value={form.hostEmail} onChange={(e) => F("hostEmail", e.target.value)} type="email" className="input-field" />
+                  <input value={form.hostEmail} onChange={(e) => F("hostEmail", e.target.value)} type="email" maxLength={100} autoComplete="off" className="input-field" />
                 </div>
                 <div>
                   <label className="block text-sm font-inter text-gray-600 mb-1.5">Contacto emergencias</label>
-                  <input value={form.emergencyContact} onChange={(e) => F("emergencyContact", e.target.value)} className="input-field" />
+                  <input value={form.emergencyContact} onChange={(e) => F("emergencyContact", e.target.value)} maxLength={60} autoComplete="off" className="input-field" />
                 </div>
                 <div>
                   <label className="block text-sm font-inter text-gray-600 mb-1.5">Código acceso</label>
-                  <input value={form.accessCode} onChange={(e) => F("accessCode", e.target.value)} maxLength={10} className="input-field" />
+                  <input value={form.accessCode} onChange={(e) => F("accessCode", e.target.value)} maxLength={10} autoComplete="off" className="input-field" />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-sm font-inter text-gray-600 mb-1.5">Instrucciones check-out</label>
-                  <textarea value={form.checkoutInstructions} onChange={(e) => F("checkoutInstructions", e.target.value)} rows={3} className="input-field resize-none" />
+                  <textarea value={form.checkoutInstructions} onChange={(e) => F("checkoutInstructions", e.target.value)} maxLength={1000} rows={3} className="input-field resize-none" />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-sm font-inter text-gray-600 mb-1.5">Gestión de residuos</label>
-                  <textarea value={form.wasteInstructions} onChange={(e) => F("wasteInstructions", e.target.value)} rows={3} className="input-field resize-none" />
+                  <textarea value={form.wasteInstructions} onChange={(e) => F("wasteInstructions", e.target.value)} maxLength={1000} rows={3} className="input-field resize-none" />
                 </div>
               </div>
             </div>

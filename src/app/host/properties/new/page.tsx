@@ -104,6 +104,7 @@ export default function NewPropertyPage() {
                   value={form.name}
                   onChange={(e) => F("name", e.target.value)}
                   placeholder="Villa Mediterránea"
+                  maxLength={60}
                   className="input-field"
                   required
                 />
@@ -116,6 +117,7 @@ export default function NewPropertyPage() {
                   value={form.address}
                   onChange={(e) => F("address", e.target.value)}
                   placeholder="Calle del Mar, 14, 07001 Palma"
+                  maxLength={120}
                   className="input-field"
                   required
                 />
@@ -128,6 +130,7 @@ export default function NewPropertyPage() {
                   value={form.description}
                   onChange={(e) => F("description", e.target.value)}
                   placeholder="Precioso apartamento a 200m de la playa..."
+                  maxLength={300}
                   rows={3}
                   className="input-field resize-none"
                 />
@@ -140,6 +143,7 @@ export default function NewPropertyPage() {
                   value={form.hostName}
                   onChange={(e) => F("hostName", e.target.value)}
                   placeholder="Carlos Martínez"
+                  maxLength={60}
                   className="input-field"
                   required
                 />
@@ -173,6 +177,7 @@ export default function NewPropertyPage() {
                   value={form.wifiName}
                   onChange={(e) => F("wifiName", e.target.value)}
                   placeholder="MiRed_5G"
+                  maxLength={60}
                   className="input-field"
                 />
               </div>
@@ -184,6 +189,7 @@ export default function NewPropertyPage() {
                   value={form.wifiPassword}
                   onChange={(e) => F("wifiPassword", e.target.value)}
                   placeholder="Contraseña1234"
+                  maxLength={60}
                   className="input-field"
                 />
               </div>
@@ -207,6 +213,7 @@ export default function NewPropertyPage() {
                   value={form.emergencyContact}
                   onChange={(e) => F("emergencyContact", e.target.value)}
                   placeholder="+34 612 345 678"
+                  maxLength={60}
                   className="input-field"
                 />
               </div>
@@ -225,6 +232,7 @@ export default function NewPropertyPage() {
                 value={form.checkoutInstructions}
                 onChange={(e) => { F("checkoutInstructions", e.target.value); setPlaceholderWarnings((p) => ({ ...p, checkoutInstructions: [] })); }}
                 placeholder="1. Lavar los platos utilizados&#10;2. Dejar las llaves en la caja de seguridad&#10;3. Check-out antes de las 11:00h"
+                maxLength={1000}
                 rows={4}
                 className="input-field resize-none text-sm"
               />
@@ -243,6 +251,7 @@ export default function NewPropertyPage() {
                 value={form.wasteInstructions}
                 onChange={(e) => { F("wasteInstructions", e.target.value); setPlaceholderWarnings((p) => ({ ...p, wasteInstructions: [] })); }}
                 placeholder="Contenedor amarillo (plástico): Calle Mayor&#10;Contenedor azul (papel): Plaza Central"
+                maxLength={1000}
                 rows={4}
                 className="input-field resize-none text-sm"
               />
