@@ -43,6 +43,9 @@ export default function GuestPage({
       .then((data) => {
         setProperty(data);
         setLoading(false);
+        if (data?.status === "active") {
+          fetch(`/api/properties/${propertyId}`, { method: "PATCH" }).catch(() => {});
+        }
       })
       .catch(() => setLoading(false));
   }, [propertyId]);

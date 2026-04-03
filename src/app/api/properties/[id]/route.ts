@@ -53,6 +53,23 @@ export async function PUT(
   }
 }
 
+// PATCH público — solo permite marcar como "occupied" cuando estaba "active" (lo llama el huésped al entrar)
+export async function PATCH(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    await prisma.property.updateMany({
+      where: { id: params.id, status: "active" },
+      data: { status: "occupied" },
+    });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("[PROPERTY PATCH]", error);
+    return NextResponse.json({ error: "Error interno." }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } }
