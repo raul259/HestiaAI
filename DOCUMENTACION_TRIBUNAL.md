@@ -395,8 +395,13 @@ NEXT_PUBLIC_APP_URL   — URL base de la app (http://localhost:3000 en dev)
 | Subida de GLB a Supabase Storage | — | ✅ Hecho |
 | Guía de escaneo 3D (ScanGuideModal) | — | ✅ Hecho |
 | Hotspots sobre modelo 3D | — | ✅ Hecho |
-| Three.js avanzado (raycasting) | 12/04 | ⏳ Pendiente |
-| Despliegue en producción (Vercel) | Antes de demo | ⏳ Pendiente |
+| Dashboard ejecutivo (solo incidencias abiertas) | — | ✅ Hecho |
+| Mis Propiedades con búsqueda y filtros de estado | — | ✅ Hecho |
+| Eliminar propiedad con confirmación inline | — | ✅ Hecho |
+| PDF asíncrono (guardar primero, extraer después) | — | ✅ Hecho |
+| Fecha de manual + botón "Probar pregunta" | — | ✅ Hecho |
+| Subida GLB directa cliente→Supabase (signed URL) | — | ✅ Hecho |
+| Despliegue en producción (Vercel) | Antes de demo | ✅ Hecho |
 | Vídeo demo | 02/05 | ⏳ Pendiente |
 | **Presentación tribunal** | **04/05** | — |
 | Entrega final | 11/05 | — |
@@ -572,13 +577,11 @@ El anfitrión puede subir el modelo 3D real de cada electrodoméstico. El flujo 
 ```
 Anfitrión expande un electrodoméstico en el panel
 → Pulsa "Subir modelo 3D (.glb)"
-→ Selecciona el archivo .glb (max 50 MB, solo .glb / .gltf)
-→ POST /api/appliances/upload-glb (FormData: glb, applianceId, propertyId)
-→ En el servidor:
-   1. Validación de tamaño y extensión
-   2. file.arrayBuffer() → Supabase Storage (bucket "appliance-models", ruta {propertyId}/{applianceId}/model.glb)
-   3. getPublicUrl() → URL pública permanente
-   4. prisma.appliance.update({ glbUrl })
+→ Selecciona el archivo .glb
+→ Flujo de subida directa (ver sección 27):
+   1. GET signed URL del servidor
+   2. PUT del archivo directo a Supabase Storage desde el navegador
+   3. PATCH al servidor para actualizar la BD con la URL pública
 → ApplianceSection actualiza el estado local → badge "Modelo 3D ✓"
 → En el visor del huésped: GLTFLoader carga glbUrl en lugar del modelo genérico por categoría
 ```
@@ -675,3 +678,150 @@ ApplianceHotspot {
 - `src/app/api/appliances/hotspots/route.ts` — GET, POST, DELETE
 - `src/components/host/ApplianceHotspotEditor.tsx` — editor Three.js con raycasting + input flotante
 - `src/components/guest/ApplianceViewer.tsx` — carga y renderiza hotspots + tooltip on click
+
+---
+
+## 24. Dashboard vs Mis Propiedades — Separación de responsabilidades
+
+Se rediseñó la navegación del panel del anfitrión para separar dos vistas con objetivos distintos.
+
+### Antes (problema)
+El dashboard mezclaba un resumen ejecutivo con la lista completa de propiedades. Con muchas propiedades, el anfitrión tenía que hacer scroll para ver las incidencias urgentes.
+
+### Después (solución)
+
+| Sección | Propósito | Contenido |
+|---|---|---|
+| **Dashboard** (`/host/dashboard`) | Vista ejecutiva — ¿qué necesita atención ahora? | Solo incidencias abiertas y en proceso, métricas ESG, analytics |
+| **Mis Propiedades** (`/host/properties`) | Gestión operativa — administrar alojamientos | Grid con buscador + filtros de estado, acceso a cada propiedad |
+
+**Cambio técnico en Dashboard:**
+- La query de incidencias ahora filtra `status: { in: ["open", "in_progress"] }` — excluye resueltas y cerradas
+- Se eliminó el bloque de tarjetas de propiedades del dashboard
+- El título del componente `RealtimeIncidents` cambió a "Incidencias abiertas"
+
+**Componente PropertiesGrid (nuevo):**
+```
+/host/properties → página servidor carga propiedades
+→ <PropertiesGrid properties={...} openByProperty={...} />
+→ Estado local: search + statusFilter ("all" | "active" | "with_guest" | "inactive")
+→ useMemo filtra por nombre/dirección Y por estado
+→ 4 botones pill: Todas / Activas / Con huésped / Inactivas
+→ Muestra contador de incidencias abiertas por propiedad
+```
+
+**Archivos:**
+- `src/app/host/dashboard/page.tsx` — query filtrada, sin lista de propiedades
+- `src/components/host/RealtimeIncidents.tsx` — título actualizado
+- `src/components/host/PropertiesGrid.tsx` — nuevo componente cliente con búsqueda y filtros
+
+---
+
+## 25. Eliminación de propiedades con confirmación inline
+
+El anfitrión puede eliminar una propiedad desde su página de detalle. La acción es irreversible (elimina en cascada electrodomésticos, incidencias y conversaciones), por lo que requiere confirmación explícita.
+
+### Patrón de confirmación inline
+
+En lugar de un modal separado, el botón "Eliminar propiedad" se transforma in situ:
+
+```
+Estado normal: [Eliminar propiedad]
+             ↓ click
+Estado confirming: "¿Eliminar propiedad?" [Confirmar] [Cancelar]
+             ↓ confirmar
+Estado loading: spinner + "Eliminando..."
+             ↓ respuesta OK
+→ redirect a /host/properties
+```
+
+**Por qué inline y no modal:** Los modales de confirmación tienen una tasa alta de "click sin leer" (muscle memory). El cambio visual en el propio botón obliga a una acción consciente diferente.
+
+**Seguridad:** El endpoint `DELETE /api/properties/{id}` verifica que la propiedad pertenece al `hostId` de la sesión antes de eliminar. Un usuario no puede eliminar propiedades de otros aunque conozca el ID.
+
+**Archivos:**
+- `src/components/host/DeletePropertyButton.tsx` — componente cliente con los 3 estados
+- `src/app/host/properties/[id]/page.tsx` — incluye `<DeletePropertyButton propertyId={...} />`
+
+---
+
+## 26. Mejoras en la gestión de electrodomésticos
+
+### 26a. Extracción asíncrona de manuales PDF
+
+**Problema anterior:** Al subir un PDF, la extracción de texto bloqueaba toda la interfaz. El anfitrión no podía seguir gestionando otros electrodomésticos mientras esperaba (PDFs de 50+ páginas tardaban varios segundos).
+
+**Solución — patrón guardar primero, extraer después:**
+
+```
+Flujo nuevo:
+1. Anfitrión sube PDF de un electrodoméstico YA GUARDADO
+   → El electrodoméstico existe en BD con manual vacío
+2. POST /api/upload-manual → extrae texto del PDF
+   → Durante la extracción: badge "Extrayendo..." con spinner en ese electrodoméstico
+   → El resto de la interfaz sigue respondiendo (el anfitrión puede subir otro PDF)
+3. Extracción completada
+   → PATCH /api/appliances { id, manual: textoExtraído }
+   → indexAppliance() actualiza el RAG en segundo plano
+   → Badge cambia a "Manual procesado ✓ (~N palabras)"
+```
+
+**Bug corregido:** El `<input type="file">` tenía estilos de deshabilitado pero seguía aceptando clicks porque el `disabled` solo estaba en el `<label>`. Se añadió `disabled={extrayendo}` directamente al `<input>`.
+
+**Archivos:**
+- `src/components/host/ApplianceSection.tsx` — lógica async, estado `extractingForId`, badge dinámico
+- `src/app/api/appliances/route.ts` — endpoint PATCH añadido para actualizar el manual
+
+### 26b. Fecha de subida del manual y "Probar pregunta"
+
+Dos mejoras de visibilidad en el panel de electrodomésticos:
+
+**Fecha de subida:** El badge "Manual procesado" ahora muestra la fecha de última actualización formateada (`dd/mm/yyyy`). El anfitrión puede ver si el manual está desactualizado respecto a una compra nueva del mismo modelo.
+
+**Botón "Probar pregunta":** Permite al anfitrión verificar que el manual funciona correctamente sin salir del panel. Abre un mini-modal con un campo de texto donde puede escribir una pregunta de prueba. La respuesta se obtiene llamando a `/api/chat` con el `propertyId` actual.
+
+```
+Anfitrión escribe: "¿Cómo pongo el programa rápido?"
+→ POST /api/chat { propertyId, sessionId: "test-host", messages: [{ role: "user", content: pregunta }] }
+→ Respuesta de Gemini usando el manual real del electrodoméstico
+→ Se muestra la respuesta en el propio mini-modal
+```
+
+**Por qué es útil:** El anfitrión puede validar que el PDF se extrajo bien antes de que lo usen los huéspedes. Si la respuesta es incorrecta o incompleta, sabe que debe mejorar el manual.
+
+---
+
+## 27. Subida de modelos 3D optimizada — Signed URLs
+
+**Problema:** La subida del archivo GLB pasaba por Vercel (servidor Next.js) antes de llegar a Supabase Storage. Esto causaba:
+- Lentitud: el archivo se subía dos veces (navegador → Vercel → Supabase)
+- Límite de tamaño: Vercel limita el body de las requests a 4.5 MB en el plan gratuito
+
+**Solución — subida directa cliente → Supabase con signed URL:**
+
+```
+Flujo nuevo (3 pasos):
+1. Navegador → GET /api/appliances/upload-glb?applianceId=...&propertyId=...
+   → Servidor genera signed URL con createSignedUploadUrl() (válida 60s)
+   → Devuelve { signedUrl, path } al cliente
+
+2. Navegador → PUT {signedUrl} con el archivo GLB directamente
+   → El archivo va de browser a Supabase Storage SIN pasar por Vercel
+   → Content-Type: model/gltf-binary
+
+3. Navegador → PATCH /api/appliances/upload-glb { applianceId, propertyId }
+   → Servidor obtiene la URL pública permanente con getGLBPublicUrl()
+   → prisma.appliance.update({ glbUrl }) actualiza la BD
+```
+
+**Por qué funciona:** Las signed URLs de Supabase Storage son URLs pre-autorizadas de corta duración. El cliente puede subir directamente a S3/Supabase sin credenciales propias. El servidor solo firma la operación y luego confirma el resultado.
+
+**Beneficios:**
+- Velocidad: la subida es directa, sin intermediario
+- Sin límite de Vercel: el archivo nunca pasa por el servidor Next.js
+- Seguridad: la URL expira en 60 segundos; el cliente no necesita la service role key
+
+**Archivos:**
+- `src/lib/supabase/storage.ts` — `createGLBSignedUploadUrl()` + `getGLBPublicUrl()`
+- `src/app/api/appliances/upload-glb/route.ts` — GET (genera signed URL) + PATCH (confirma y actualiza BD)
+- `src/components/host/ApplianceSection.tsx` — `handleGlbUpload()` con flujo de 3 pasos
