@@ -202,7 +202,12 @@ export default function ChatInterface({
       });
 
       const data = await res.json();
-      if (data.reply) {
+      if (res.status === 429 || data.error === "DAILY_LIMIT_REACHED") {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "Has alcanzado el límite de 20 mensajes por día. Puedes seguir usando el asistente mañana. Si tienes una urgencia, usa el botón \"Reportar incidencia\"." },
+        ]);
+      } else if (data.reply) {
         setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
       } else {
         setMessages((prev) => [

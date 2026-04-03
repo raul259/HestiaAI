@@ -186,6 +186,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Rate limit: máximo 20 mensajes de usuario por sesión al día
+    const DAILY_LIMIT = 20;
+    const existingConv = await prisma.conversation.findFirst({
+      where: { sessionId, propertyId },
+    });
+    if (existingConv) {
+      const allMsgs = JSON.parse(existingConv.messages) as ChatMessage[];
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      // Los mensajes no tienen timestamp, contamos los del array total del usuario
+      const userMsgCount = allMsgs.filter((m) => m.role === "user").length;
+      if (userMsgCount >= DAILY_LIMIT) {
+        return NextResponse.json(
+          { error: "DAILY_LIMIT_REACHED" },
+          { status: 429 }
+        );
+      }
+    }
+
     const property = await prisma.property.findUnique({
       where: { id: propertyId },
       include: { appliances: true },

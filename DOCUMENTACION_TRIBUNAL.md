@@ -825,3 +825,49 @@ Flujo nuevo (3 pasos):
 - `src/lib/supabase/storage.ts` — `createGLBSignedUploadUrl()` + `getGLBPublicUrl()`
 - `src/app/api/appliances/upload-glb/route.ts` — GET (genera signed URL) + PATCH (confirma y actualiza BD)
 - `src/components/host/ApplianceSection.tsx` — `handleGlbUpload()` con flujo de 3 pasos
+
+---
+
+## 28. Límite de mensajes diario por huésped
+
+### Problema
+Sin límite, un huésped que abusa del chat (o un bot) puede generar costes ilimitados en la API de Gemini. Un huésped real raramente supera 20 preguntas en un día.
+
+### Solución — Rate limiting por sessionId en el servidor
+
+Límite: **20 mensajes de usuario por sesión por día**.
+
+Cada huésped tiene un `sessionId` único generado en su navegador al entrar por primera vez (`session_${Date.now()}_${randomString}`). Este ID identifica a cada huésped de forma independiente.
+
+```
+Huésped envía mensaje → POST /api/chat
+→ Servidor busca la conversación existente de ese sessionId
+→ Cuenta los mensajes con role = "user" en el historial
+→ Si count >= 20:
+   → Devuelve HTTP 429 { error: "DAILY_LIMIT_REACHED" }
+→ Si count < 20:
+   → Llama a Gemini normalmente
+```
+
+**En el cliente (ChatInterface.tsx):**
+```
+Recibe HTTP 429 o { error: "DAILY_LIMIT_REACHED" }
+→ Muestra burbuja del asistente:
+   "Has alcanzado el límite de 20 mensajes por día.
+    Puedes seguir usando el asistente mañana.
+    Si tienes una urgencia, usa el botón 'Reportar incidencia'."
+```
+
+**Por qué por sesión y no por propiedad:**
+Si el límite fuera por propiedad, todos los huéspedes compartirían el cupo — 3 huéspedes en distintas propiedades agotarían el límite entre todos. Con el límite por sessionId cada huésped tiene sus propios 20 mensajes independientes.
+
+**Ejemplo con 20 propiedades activas simultáneamente:**
+- Huésped A (propiedad 1) → 20 mensajes propios
+- Huésped B (propiedad 2) → 20 mensajes propios
+- Ninguno afecta al otro
+
+**Nota técnica:** El límite actual es acumulado (total de mensajes en la conversación, no estrictamente "hoy"). Esto simplifica la implementación al no requerir timestamps por mensaje. Para una versión futura se podría añadir `createdAt` a cada mensaje individual.
+
+**Archivos:**
+- `src/app/api/chat/route.ts` — comprobación antes de llamar a Gemini, constante `DAILY_LIMIT = 20`
+- `src/components/guest/ChatInterface.tsx` — manejo de status 429 con mensaje amable
