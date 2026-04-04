@@ -76,7 +76,6 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
     setPdfError("");
 
     if (applianceId) {
-      // Modo async: electrodoméstico ya creado — extraer en background y hacer PATCH
       setExtractingForId(applianceId);
       if (fileInputRef.current) fileInputRef.current.value = "";
       const data = new FormData();
@@ -97,7 +96,6 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
       }
       setExtractingForId(null);
     } else {
-      // Modo formulario: rellena el campo manual antes de guardar
       setExtrayendo(true);
       const data = new FormData();
       data.append("pdf", file);
