@@ -35,7 +35,15 @@ ${property.checkoutInstructions ?? "Sin instrucciones especiales."}
 ${property.wasteInstructions ?? "Sin instrucciones especiales."}
 
 ## CONTACTOS DE EMERGENCIA
-${property.emergencyContact ?? "Contactar al anfitrión."}`;
+${property.emergencyContact ?? "Contactar al anfitrión."}
+
+## NÚMEROS DE EMERGENCIA NACIONALES (España)
+Cuando el huésped pregunte por emergencias o números de teléfono de urgencia, DEBES listar TODOS estos números tal cual, sin resumir:
+- 🚨 Emergencias generales: **112**
+- 🚑 Ambulancia / Urgencias médicas: **061**
+- 👮 Policía Nacional: **091**
+- 👮 Policía Local: **092**
+- 🔥 Bomberos: **080**`;
 }
 
 function buildRules(): string {

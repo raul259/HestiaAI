@@ -28,3 +28,12 @@ prisma/generated/
 
 # Misc
 .vercel
+
+# Documentación interna / archivos locales
+CRONOGRAMA*.txt
+DOCUMENTACION_TRIBUNAL*.md
+PROGRESS*.md
+Progress*.md
+*.pdf
+*.zip
+modelo 3D/
