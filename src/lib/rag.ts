@@ -50,20 +50,24 @@ export async function indexAppliance(
   await prisma.manualChunk.deleteMany({ where: { applianceId } });
 
   const chunks = chunkText(manual);
+  const BATCH_SIZE = 10;
 
-  for (let i = 0; i < chunks.length; i++) {
-    // Incluir el nombre del electrodoméstico como contexto en el embedding
-    const contextualText = `${applianceName}: ${chunks[i]}`;
-    const embedding = await generateEmbedding(contextualText);
-
-    await prisma.manualChunk.create({
-      data: {
-        applianceId,
-        chunkIndex: i,
-        chunkText: chunks[i],
-        embedding: JSON.stringify(embedding),
-      },
-    });
+  for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+    const batch = chunks.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      batch.map(async (chunk, j) => {
+        const contextualText = `${applianceName}: ${chunk}`;
+        const embedding = await generateEmbedding(contextualText);
+        await prisma.manualChunk.create({
+          data: {
+            applianceId,
+            chunkIndex: i + j,
+            chunkText: chunk,
+            embedding: JSON.stringify(embedding),
+          },
+        });
+      })
+    );
   }
 }
 
