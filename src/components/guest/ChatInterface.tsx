@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Loader2, AlertTriangle, Box, Wifi, Clock, Phone } from "lucide-react";
+import Image from "next/image";
+import { Send, User, Loader2, AlertTriangle, Box, Wifi, Clock, Phone } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { ChatMessage, Appliance } from "@/types";
 import { cn } from "@/lib/utils";
@@ -231,8 +232,8 @@ export default function ChatInterface({
       {/* Welcome banner — solo cuando no hay historial de chat */}
       {!chatStarted && historyLoaded && (
         <div className="bg-[#1B3022] px-4 py-3 flex items-center gap-3 flex-shrink-0">
-          <div className="w-8 h-8 rounded-full bg-electric-mint flex items-center justify-center flex-shrink-0">
-            <Bot className="w-4 h-4 text-deep-forest" />
+          <div className="w-8 h-8 rounded-full bg-electric-mint flex items-center justify-center flex-shrink-0 overflow-hidden">
+            <Image src="/hestia.png" alt="Hestia" width={32} height={32} className="object-cover" />
           </div>
           <p className="text-sm text-white/90 leading-snug font-inter">
             Hola, soy <strong className="text-white">Hestia</strong>. Estoy aquí 24h para cualquier duda del apartamento.
@@ -272,16 +273,16 @@ export default function ChatInterface({
             >
               <div
                 className={cn(
-                  "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5",
+                  "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 overflow-hidden",
                   msg.role === "user"
                     ? "bg-deep-forest text-electric-mint"
-                    : "bg-electric-mint text-deep-forest"
+                    : "bg-electric-mint"
                 )}
               >
                 {msg.role === "user" ? (
                   <User className="w-4 h-4" />
                 ) : (
-                  <Bot className="w-4 h-4" />
+                  <Image src="/hestia.png" alt="Hestia" width={32} height={32} className="object-cover" />
                 )}
               </div>
               <div className="space-y-2">
@@ -346,8 +347,8 @@ export default function ChatInterface({
 
           {loading && (
             <div className="flex gap-3 max-w-[85%]">
-              <div className="w-8 h-8 rounded-xl bg-electric-mint text-deep-forest flex items-center justify-center flex-shrink-0">
-                <Bot className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-xl bg-electric-mint flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <Image src="/hestia.png" alt="Hestia" width={32} height={32} className="object-cover" />
               </div>
               <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-electric-mint" />
