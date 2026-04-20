@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { Building2, AlertCircle, Wrench, ArrowRight, Plus, Leaf, Car, Clock, MessageSquare, TrendingUp, BarChart2 } from "lucide-react";
 import LogoutButton from "@/components/host/LogoutButton";
+import FrequentQuestionsCard from "@/components/host/FrequentQuestionsCard";
 import RealtimeIncidents from "@/components/host/RealtimeIncidents";
 import IncidentChart from "@/components/host/IncidentChart";
 import { ProgressRing } from "@/components/ui/ProgressRing";
@@ -33,7 +34,7 @@ export default async function DashboardPage() {
     }),
     prisma.conversation.findMany({
       where: { property: { hostId: user!.id } },
-      select: { messages: true },
+      select: { messages: true, sessionId: true, property: { select: { name: true } } },
     }),
   ]);
 
@@ -85,10 +86,12 @@ export default async function DashboardPage() {
   ];
 
   const topicCounts: Record<string, number> = Object.fromEntries(TOPICS.map((t) => [t.key, 0]));
+  const topicBreakdown: Record<string, Record<string, { count: number; examples: string[] }>> = Object.fromEntries(TOPICS.map((t) => [t.key, {}]));
   let totalUserMessages = 0;
 
   for (const conv of conversations) {
     try {
+      const propertyName = conv.property.name;
       const msgs: { role: string; content: string }[] = JSON.parse(conv.messages);
       for (const msg of msgs) {
         if (msg.role !== "user") continue;
@@ -97,6 +100,15 @@ export default async function DashboardPage() {
         for (const topic of TOPICS) {
           if (topic.keywords.some((kw) => lower.includes(kw))) {
             topicCounts[topic.key]++;
+            if (!topicBreakdown[topic.key][propertyName]) {
+              topicBreakdown[topic.key][propertyName] = { count: 0, examples: [] };
+            }
+            topicBreakdown[topic.key][propertyName].count++;
+            if (topicBreakdown[topic.key][propertyName].examples.length < 3) {
+              topicBreakdown[topic.key][propertyName].examples.push(
+                msg.content.length > 80 ? msg.content.slice(0, 80) + "…" : msg.content
+              );
+            }
             break;
           }
         }
@@ -110,6 +122,9 @@ export default async function DashboardPage() {
     label: t.label,
     count: topicCounts[t.key],
     pct: totalUserMessages > 0 ? Math.round((topicCounts[t.key] / totalUserMessages) * 100) : 0,
+    breakdown: Object.entries(topicBreakdown[t.key])
+      .map(([propertyName, data]) => ({ propertyName, ...data }))
+      .sort((a, b) => b.count - a.count),
   }))
     .filter((t) => t.count > 0)
     .sort((a, b) => b.count - a.count)
@@ -349,25 +364,7 @@ export default async function DashboardPage() {
               <MessageSquare className="w-5 h-5 text-electric-mint" />
               Preguntas más frecuentes
             </h2>
-            <div className="card space-y-4">
-              {topTopics.map((topic) => (
-                <div key={topic.label}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-inter text-sm text-slate-body">{topic.label}</span>
-                    <span className="font-inter text-xs text-gray-400">{topic.count} preguntas · {topic.pct}%</span>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-electric-mint rounded-full transition-all"
-                      style={{ width: `${topic.pct}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-              <p className="text-xs font-inter text-gray-400 pt-1">
-                Basado en {totalUserMessages} mensajes de huéspedes
-              </p>
-            </div>
+            <FrequentQuestionsCard topics={topTopics} totalMessages={totalUserMessages} />
           </div>
         )}
       </main>
