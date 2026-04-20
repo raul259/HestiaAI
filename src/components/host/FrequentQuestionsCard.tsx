@@ -62,7 +62,7 @@ export default function FrequentQuestionsCard({ topics, totalMessages }: Props) 
                   {b.examples.map((ex, i) => (
                     <div key={i} className="flex items-start gap-1.5 pl-5">
                       <MessageSquare className="w-3 h-3 text-gray-300 flex-shrink-0 mt-0.5" />
-                      <p className="font-inter text-xs text-gray-500 italic">"{ex}"</p>
+                      <p className="font-inter text-xs text-gray-500 italic">&ldquo;{ex}&rdquo;</p>
                     </div>
                   ))}
                 </div>
