@@ -159,8 +159,12 @@ export default function ChatInterface({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [hasIncidents, setHasIncidents] = useState(false);
 
   useEffect(() => {
+    const ids: string[] = JSON.parse(localStorage.getItem(`hestia_incidents_${propertyId}`) ?? "[]");
+    if (ids.length > 0) setHasIncidents(true);
+
     fetch(`/api/chat?sessionId=${sessionId}&propertyId=${propertyId}`)
       .then((r) => r.json())
       .then((data) => {
@@ -177,6 +181,7 @@ export default function ChatInterface({
   // Inyectar mensaje de confirmación cuando se crea una incidencia
   useEffect(() => {
     if (incidentCreatedTrigger === 0) return;
+    setHasIncidents(true);
     setMessages((prev) => [
       ...prev,
       { role: "assistant", content: INCIDENT_MARKER },
@@ -442,6 +447,15 @@ export default function ChatInterface({
                   </button>
                 ))}
               </div>
+            )}
+            {hasIncidents && onViewIncidents && (
+              <button
+                onClick={onViewIncidents}
+                className="w-full flex items-center justify-center gap-2 text-sm font-inter text-deep-forest bg-gray-50 border border-gray-200 rounded-xl py-2 hover:bg-gray-100 transition-colors"
+              >
+                <AlertTriangle className="w-4 h-4 text-orange-500" />
+                Ver mis incidencias
+              </button>
             )}
             <button
               onClick={onIncidentRequest}
