@@ -262,6 +262,7 @@ export default function ChatInterface({
         <div className="bg-[#1B3022] flex-shrink-0">
           <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/hestia.png" alt="Hestia" className="w-full h-full object-cover" />
             </div>
             <p className="text-sm text-white/90 leading-snug font-inter">
@@ -315,6 +316,7 @@ export default function ChatInterface({
                     {msg.role === "user" ? (
                       <User className="w-4 h-4" />
                     ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img src="/hestia.png" alt="Hestia" className="w-full h-full object-cover" />
                     )}
                   </div>
@@ -403,6 +405,7 @@ export default function ChatInterface({
               {loading && (
                 <div className="flex gap-3 max-w-[85%]">
                   <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src="/hestia.png" alt="Hestia" className="w-full h-full object-cover" />
                   </div>
                   <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm flex items-center gap-2">
