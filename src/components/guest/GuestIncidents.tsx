@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Clock, Wrench, CheckCircle2, XCircle, AlertCircle, MessageSquare } from "lucide-react";
+import { Clock, Wrench, CheckCircle2, AlertCircle, MessageSquare } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; bg: string; text: string }> = {
@@ -23,12 +23,6 @@ const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; bg: 
     icon: <CheckCircle2 className="w-3.5 h-3.5" />,
     bg: "bg-green-50",
     text: "text-green-600",
-  },
-  closed: {
-    label: "Cerrado",
-    icon: <XCircle className="w-3.5 h-3.5" />,
-    bg: "bg-gray-100",
-    text: "text-gray-500",
   },
 };
 

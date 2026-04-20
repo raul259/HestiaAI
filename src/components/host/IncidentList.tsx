@@ -210,7 +210,6 @@ export default function IncidentList({ incidents: initial }: Props) {
           <option value="open">Abierta</option>
           <option value="in_progress">En proceso</option>
           <option value="resolved">Resuelta</option>
-          <option value="closed">Cerrada</option>
         </select>
         <select
           value={priorityFilter}

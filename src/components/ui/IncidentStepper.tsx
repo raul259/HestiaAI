@@ -5,7 +5,6 @@ const STEPS = [
   { key: "open",        label: "Recibida"   },
   { key: "in_progress", label: "En proceso" },
   { key: "resolved",    label: "Resuelta"   },
-  { key: "closed",      label: "Cerrada"    },
 ];
 
 export function IncidentStepper({ status }: { status: string }) {
