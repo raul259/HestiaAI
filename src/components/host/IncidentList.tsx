@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { AlertCircle, ChevronDown, ChevronUp, Loader2, MessageSquare, Send, Search } from "lucide-react";
-import { formatDate, getPriorityColor, getStatusColor, getPriorityLabel, getStatusLabel } from "@/lib/utils";
+import { formatDate, getPriorityColor, getPriorityLabel } from "@/lib/utils";
+import { IncidentStepper } from "@/components/ui/IncidentStepper";
 
 interface IncidentNote {
   id: string;
@@ -254,14 +255,15 @@ export default function IncidentList({ incidents: initial }: Props) {
               <span className={`badge ${getPriorityColor(incident.priority)}`}>
                 {getPriorityLabel(incident.priority)}
               </span>
-              <span className={`badge ${getStatusColor(incident.status)}`}>
-                {getStatusLabel(incident.status)}
-              </span>
               {expanded === incident.id
                 ? <ChevronUp className="w-3.5 h-3.5 text-gray-300 mt-1" />
                 : <ChevronDown className="w-3.5 h-3.5 text-gray-300 mt-1" />
               }
             </div>
+          </div>
+
+          <div className="py-2">
+            <IncidentStepper status={incident.status} />
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-gray-100">

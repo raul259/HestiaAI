@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Wifi, Phone, LogOut, Trash2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Wifi, Phone, LogOut, Trash2, ExternalLink, MapPin, KeyRound } from "lucide-react";
 import ApplianceSection from "@/components/host/ApplianceSection";
 import IncidentList from "@/components/host/IncidentList";
 import QRCodeCard from "@/components/host/QRCodeCard";
@@ -36,7 +36,7 @@ export default async function PropertyDetailPage({
       <header className="bg-deep-forest px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/host/dashboard" className="text-white/60 hover:text-white">
+            <Link href="/host/properties" className="text-white/60 hover:text-white">
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
@@ -68,6 +68,17 @@ export default async function PropertyDetailPage({
             <h2 className="font-outfit font-semibold text-lg text-deep-forest">
               Información básica
             </h2>
+            <InfoRow icon={<MapPin className="w-4 h-4" />} label="Ubicación">
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.address)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-electric-mint hover:underline"
+              >
+                {property.address}
+                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+              </a>
+            </InfoRow>
             <InfoRow icon={<Wifi className="w-4 h-4" />} label="WiFi">
               {property.wifiName ? (
                 <span>
@@ -83,7 +94,7 @@ export default async function PropertyDetailPage({
               )}
             </InfoRow>
             {property.accessCode && (
-              <InfoRow icon={<span>🔑</span>} label="Código acceso">
+              <InfoRow icon={<KeyRound className="w-4 h-4" />} label="Código acceso">
                 {property.accessCode}
               </InfoRow>
             )}

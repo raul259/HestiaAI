@@ -12,11 +12,12 @@ const PRIORITIES = [
 
 interface Props {
   propertyId: string;
+  sessionId?: string;
   onClose: () => void;
   onIncidentCreated?: () => void;
 }
 
-export default function IncidentForm({ propertyId, onClose, onIncidentCreated }: Props) {
+export default function IncidentForm({ propertyId, sessionId, onClose, onIncidentCreated }: Props) {
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -65,7 +66,7 @@ export default function IncidentForm({ propertyId, onClose, onIncidentCreated }:
       const res = await fetch("/api/incidents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, propertyId }),
+        body: JSON.stringify({ ...form, propertyId, ...(sessionId && { sessionId }) }),
       });
 
       if (res.ok) {

@@ -81,7 +81,7 @@ export default function GuestPage({
   }
 
   return (
-    <div className="h-screen bg-off-white flex flex-col overflow-hidden">
+    <div className="h-[100dvh] bg-off-white flex flex-col overflow-hidden">
       {/* Header */}
       <header className="bg-deep-forest px-4 py-3 flex items-center gap-3 shadow-lg flex-shrink-0">
         <div className="w-9 h-9 bg-electric-mint rounded-xl flex items-center justify-center">
@@ -118,6 +118,7 @@ export default function GuestPage({
       {showIncident && (
         <IncidentForm
           propertyId={propertyId}
+          sessionId={sessionId}
           onClose={() => setShowIncident(false)}
           onIncidentCreated={() => {
             setShowIncident(false);

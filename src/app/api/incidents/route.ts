@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       propertyId,
+      sessionId,
       title,
       description,
       category,
@@ -113,6 +114,14 @@ export async function POST(req: NextRequest) {
         scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
       },
     });
+
+    // Bloquear la conversación del guest para preservación legal (prescripción 1-3 años)
+    if (sessionId) {
+      prisma.conversation.updateMany({
+        where: { sessionId, propertyId },
+        data: { isLocked: true, expiresAt: null },
+      }).catch((err) => console.error("[RETENTION] Error bloqueando conversación:", err));
+    }
 
     // Enviar email al anfitrión (sin bloquear la respuesta si falla)
     if (property?.hostEmail && process.env.RESEND_API_KEY) {

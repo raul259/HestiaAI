@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
-import { Building2, AlertCircle, Wrench, ArrowRight, Plus, Leaf, Car, Clock, MessageSquare, TrendingUp } from "lucide-react";
+import { Building2, AlertCircle, Wrench, ArrowRight, Plus, Leaf, Car, Clock, MessageSquare, TrendingUp, BarChart2 } from "lucide-react";
 import LogoutButton from "@/components/host/LogoutButton";
 import RealtimeIncidents from "@/components/host/RealtimeIncidents";
 import IncidentChart from "@/components/host/IncidentChart";
+import { ProgressRing } from "@/components/ui/ProgressRing";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,7 @@ export default async function DashboardPage() {
   // ESG metrics
   const resolvedIncidents = allIncidents.filter((i) => i.status === "resolved");
   const visitasEvitadas = resolvedIncidents.length;
-  const co2Ahorrado = +(visitasEvitadas * 1.2).toFixed(1); // kg CO₂ por visita técnica evitada (~5km coche)
+  const co2Ahorrado = +(visitasEvitadas * 1.2).toFixed(1);
   const avgResolutionHours =
     resolvedIncidents.length > 0
       ? +(
@@ -58,6 +59,20 @@ export default async function DashboardPage() {
           3600
         ).toFixed(1)
       : null;
+
+  // Ring metrics
+  const totalInc = allIncidents.length;
+  const resolutionPct = totalInc > 0 ? Math.round((resolvedIncidents.length / totalInc) * 100) : 0;
+  const propertiesWithGuest = properties.filter((p) => p.status === "with_guest").length;
+  const occupancyPct = properties.length > 0 ? Math.round((propertiesWithGuest / properties.length) * 100) : 0;
+
+  // Multi-barra: desglose de estados de incidencias
+  const statusBreakdown = [
+    { label: "Resueltas",   count: allIncidents.filter((i) => i.status === "resolved").length,    color: "#88EBC0", dot: "bg-[#88EBC0]" },
+    { label: "En proceso",  count: allIncidents.filter((i) => i.status === "in_progress").length,  color: "#FBB040", dot: "bg-amber-400" },
+    { label: "Abiertas",    count: allIncidents.filter((i) => i.status === "open").length,         color: "#F87171", dot: "bg-red-400"   },
+    { label: "Cerradas",    count: allIncidents.filter((i) => i.status === "closed").length,       color: "#D1D5DB", dot: "bg-gray-300"  },
+  ].filter((s) => s.count > 0);
 
   // Analytics: preguntas más frecuentes por categoría
   const TOPICS = [
@@ -215,7 +230,40 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* ESG */}
+        {/* Rings — métricas de rendimiento */}
+        <div>
+          <h2 className="font-outfit font-semibold text-xl text-deep-forest mb-4 flex items-center gap-2">
+            <Leaf className="w-5 h-5 text-electric-mint" />
+            Rendimiento operativo
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="card">
+              <ProgressRing
+                pct={resolutionPct}
+                label="Resolución de incidencias"
+                sub={`${resolvedIncidents.length} de ${totalInc} resueltas`}
+              />
+            </div>
+            <div className="card">
+              <ProgressRing
+                pct={100}
+                label="Asistente disponible"
+                sub="24/7 operativo"
+                color="#88EBC0"
+              />
+            </div>
+            <div className="card">
+              <ProgressRing
+                pct={occupancyPct}
+                label="Ocupación actual"
+                sub={`${propertiesWithGuest} de ${properties.length} alojamientos`}
+                color="#6EE7B7"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ESG — métricas numéricas */}
         <div>
           <h2 className="font-outfit font-semibold text-xl text-deep-forest mb-4 flex items-center gap-2">
             <Leaf className="w-5 h-5 text-electric-mint" />
@@ -259,6 +307,40 @@ export default async function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Multi-barra — desglose de estados */}
+        {totalInc > 0 && (
+          <div>
+            <h2 className="font-outfit font-semibold text-xl text-deep-forest mb-4 flex items-center gap-2">
+              <BarChart2 className="w-5 h-5 text-electric-mint" />
+              Estado de incidencias
+            </h2>
+            <div className="card space-y-3">
+              <p className="font-inter text-xs text-gray-400">Desglose · {totalInc} incidencias en total</p>
+              {/* Barra segmentada */}
+              <div className="flex h-2.5 rounded-full overflow-hidden gap-0.5">
+                {statusBreakdown.map((s) => (
+                  <div
+                    key={s.label}
+                    style={{ width: `${Math.round((s.count / totalInc) * 100)}%`, backgroundColor: s.color }}
+                    className="h-full first:rounded-l-full last:rounded-r-full transition-all"
+                  />
+                ))}
+              </div>
+              {/* Leyenda */}
+              <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+                {statusBreakdown.map((s) => (
+                  <div key={s.label} className="flex items-center gap-1.5">
+                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.dot}`} />
+                    <span className="font-inter text-xs text-gray-500">
+                      {s.label} <strong className="text-gray-700">{Math.round((s.count / totalInc) * 100)}%</strong>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Analytics */}
         {topTopics.length > 0 && (

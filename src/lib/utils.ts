@@ -18,30 +18,30 @@ export function formatDate(date: Date | string) {
 export function getPriorityColor(priority: string) {
   switch (priority) {
     case "urgent":
-      return "text-red-600 bg-red-50 border-red-200";
+      return "text-white bg-red-600 border-red-600";
     case "high":
-      return "text-orange-600 bg-orange-50 border-orange-200";
+      return "text-[#C2410C] bg-[#FFF7ED] border-[#FDBA74]";
     case "medium":
-      return "text-yellow-600 bg-yellow-50 border-yellow-200";
+      return "text-[#A16207] bg-[#FEFCE8] border-[#FDE047]";
     case "low":
-      return "text-green-600 bg-green-50 border-green-200";
+      return "text-[#0E7490] bg-[#ECFEFF] border-[#A5F3FC]";
     default:
-      return "text-slate-body bg-gray-50 border-gray-200";
+      return "text-gray-500 bg-gray-50 border-gray-200";
   }
 }
 
 export function getStatusColor(status: string) {
   switch (status) {
     case "open":
-      return "text-blue-600 bg-blue-50 border-blue-200";
+      return "text-[#4338CA] bg-[#EEF2FF] border-[#A5B4FC]";
     case "in_progress":
-      return "text-yellow-600 bg-yellow-50 border-yellow-200";
+      return "text-[#B45309] bg-[#FFFBEB] border-[#FCD34D]";
     case "resolved":
-      return "text-green-600 bg-green-50 border-green-200";
+      return "text-white bg-[#1B3022] border-[#1B3022]";
     case "closed":
-      return "text-gray-600 bg-gray-50 border-gray-200";
+      return "text-gray-500 bg-gray-100 border-gray-300";
     default:
-      return "text-slate-body bg-gray-50 border-gray-200";
+      return "text-gray-500 bg-gray-50 border-gray-200";
   }
 }
 

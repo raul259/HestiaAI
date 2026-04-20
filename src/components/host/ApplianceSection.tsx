@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { Plus, Trash2, ChevronDown, ChevronUp, FileText, Upload, CheckCircle2, Box, HelpCircle, Loader2, MapPin, MessageSquare, Send, X } from "lucide-react";
 import { Appliance } from "@/types";
 import { getCategoryIcon } from "@/lib/utils";
+import { parseSuggestions } from "@/components/guest/ChatInterface";
 import ScanGuideModal from "./ScanGuideModal";
 import ApplianceHotspotEditor from "./ApplianceHotspotEditor";
 
@@ -184,7 +185,11 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
         }),
       });
       const data = await res.json();
-      setTestAnswer(data.reply ?? "Sin respuesta.");
+      if (!res.ok) {
+        setTestAnswer(`Error ${res.status}: ${data.error ?? "Sin respuesta del servidor."}`);
+      } else {
+        setTestAnswer(data.reply ?? "Sin respuesta.");
+      }
     } catch {
       setTestAnswer("Error de conexión.");
     } finally {
@@ -399,12 +404,34 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
                     <>
                       <div className="flex items-center justify-between gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
                         <div className="flex items-center gap-2 text-sm text-green-700">
-                          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                          <span className="font-inter font-medium">Manual procesado</span>
+                          {extractingForId === a.id ? (
+                            <Loader2 className="w-4 h-4 flex-shrink-0 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                          )}
+                          <span className="font-inter font-medium">
+                            {extractingForId === a.id ? "Reemplazando manual..." : "Manual procesado"}
+                          </span>
                         </div>
-                        <span className="text-xs font-inter text-green-600">
-                          Subido {new Date(a.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <label
+                            htmlFor={`pdf-replace-${a.id}`}
+                            className={`text-xs cursor-pointer ${extractingForId === a.id ? "text-green-300 pointer-events-none" : "text-green-600 hover:underline"}`}
+                          >
+                            Reemplazar PDF
+                          </label>
+                          <input
+                            id={`pdf-replace-${a.id}`}
+                            type="file"
+                            accept="application/pdf"
+                            className="hidden"
+                            disabled={extractingForId === a.id}
+                            onChange={(e) => handlePdfUpload(e, a.id)}
+                          />
+                          <span className="text-xs font-inter text-green-600">
+                            Subido {new Date(a.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                          </span>
+                        </div>
                       </div>
                       <div className="flex items-center justify-between gap-2 bg-gray-50 rounded-xl px-4 py-2">
                         <div className="flex items-center gap-2 text-xs text-gray-400">
@@ -560,11 +587,29 @@ export default function ApplianceSection({ propertyId, appliances: initial }: Pr
                 {testLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </button>
             </div>
-            {testAnswer && (
-              <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-inter text-slate-body leading-relaxed">
-                {testAnswer}
-              </div>
-            )}
+            {testAnswer && (() => {
+              const { text, suggestions } = parseSuggestions(testAnswer);
+              return (
+                <div className="space-y-2">
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-inter text-slate-body leading-relaxed whitespace-pre-wrap">
+                    {text}
+                  </div>
+                  {suggestions.length > 0 && (
+                    <div className="flex flex-col gap-1.5">
+                      {suggestions.map((s, si) => (
+                        <button
+                          key={si}
+                          onClick={() => setTestQuestion(s)}
+                          className="text-left text-xs font-inter font-medium text-[#0F6E56] bg-[#E1F5EE] hover:bg-[#c7ede0] border border-[#a7dfc8] px-3 py-2 rounded-xl transition-colors"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}

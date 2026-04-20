@@ -85,7 +85,15 @@ Si el huésped menciona que se siente mal emocionalmente, está deprimido, solo,
 5. Cuando expliques cómo usar un electrodoméstico, basa tu respuesta ÚNICAMENTE en el manual proporcionado.
 6. Si te preguntan algo sobre el alojamiento que no está cubierto por la información que tienes, sé honesto e indica que no tienes esa información y que contacten con el anfitrión.
 7. Siempre que sea posible, termina con una frase que confirme si el problema ha quedado resuelto.
-8. MODELO 3D — Cuando expliques cómo usar un electrodoméstico que tenga la etiqueta [TIENE MODELO 3D INTERACTIVO], menciona al final de tu respuesta que el huésped puede pulsar el botón "Ver en 3D" para ver el modelo interactivo del electrodoméstico y encontrar visualmente los botones o partes mencionadas.`;
+8. MODELO 3D — Cuando expliques cómo usar un electrodoméstico que tenga la etiqueta [TIENE MODELO 3D INTERACTIVO], menciona al final de tu respuesta que el huésped puede pulsar el botón "Ver en 3D" para ver el modelo interactivo del electrodoméstico y encontrar visualmente los botones o partes mencionadas.
+9. PREGUNTAS CONCRETAS — Cuando el huésped haga una pregunta AMPLIA o GENÉRICA sobre un electrodoméstico (ejemplos: "¿cómo funciona el lavavajillas?", "cuéntame sobre la lavadora", "explícame el horno"), NO vuelques todo el manual de golpe. En su lugar:
+   a) Escribe UNA frase breve de introducción (máx. 1-2 frases).
+   b) Añade EXACTAMENTE en la última línea de tu respuesta, sin nada después, el marcador:
+      [SUGERENCIAS:"pregunta corta 1","pregunta corta 2","pregunta corta 3"]
+   Las preguntas deben ser concretas, cortas (máx. 40 caracteres), en el idioma del huésped, y cubrir los usos más frecuentes de ese electrodoméstico.
+   Ejemplo para lavavajillas: [SUGERENCIAS:"¿Cómo poner el detergente?","¿Qué programa elegir?","¿Por qué no enciende?"]
+   Este marcador será procesado por la interfaz — no es texto visible para el huésped.
+   SOLO usa este marcador para preguntas amplias sobre electrodomésticos. Para preguntas específicas, responde directamente sin marcador.`;
 }
 
 async function buildSystemPrompt(
@@ -172,10 +180,13 @@ export async function GET(req: NextRequest) {
     where: { sessionId, propertyId },
   });
 
-  if (!conversation) return NextResponse.json({ messages: [] });
+  if (!conversation) return NextResponse.json({ messages: [], remaining: 20 });
 
   const messages = JSON.parse(conversation.messages as string) as ChatMessage[];
-  return NextResponse.json({ messages });
+  const isHostTest = sessionId.startsWith("host_test_");
+  const userMsgCount = messages.filter((m) => m.role === "user").length;
+  const remaining = isHostTest ? null : Math.max(0, 20 - userMsgCount);
+  return NextResponse.json({ messages, remaining });
 }
 
 export async function POST(req: NextRequest) {
@@ -195,21 +206,22 @@ export async function POST(req: NextRequest) {
     }
 
     // Rate limit: máximo 20 mensajes de usuario por sesión al día
-    const DAILY_LIMIT = 20;
-    const existingConv = await prisma.conversation.findFirst({
-      where: { sessionId, propertyId },
-    });
-    if (existingConv) {
-      const allMsgs = JSON.parse(existingConv.messages) as ChatMessage[];
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      // Los mensajes no tienen timestamp, contamos los del array total del usuario
-      const userMsgCount = allMsgs.filter((m) => m.role === "user").length;
-      if (userMsgCount >= DAILY_LIMIT) {
-        return NextResponse.json(
-          { error: "DAILY_LIMIT_REACHED" },
-          { status: 429 }
-        );
+    // Las sesiones de test del host (host_test_*) no tienen límite
+    const isHostTest = sessionId.startsWith("host_test_");
+    if (!isHostTest) {
+      const DAILY_LIMIT = 20;
+      const existingConv = await prisma.conversation.findFirst({
+        where: { sessionId, propertyId },
+      });
+      if (existingConv) {
+        const allMsgs = JSON.parse(existingConv.messages) as ChatMessage[];
+        const userMsgCount = allMsgs.filter((m) => m.role === "user").length;
+        if (userMsgCount >= DAILY_LIMIT) {
+          return NextResponse.json(
+            { error: "DAILY_LIMIT_REACHED" },
+            { status: 429 }
+          );
+        }
       }
     }
 
@@ -225,6 +237,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (property.status === "inactive") {
+      return NextResponse.json(
+        { error: "PROPERTY_INACTIVE" },
+        { status: 403 }
+      );
+    }
+
     // Tomar la última pregunta del usuario como consulta para RAG
     const lastUserMessage = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
     const systemPrompt = await buildSystemPrompt(property, lastUserMessage);
@@ -234,21 +253,50 @@ export async function POST(req: NextRequest) {
       parts: [{ text: m.content }],
     }));
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+    const geminiConfig = {
       config: {
         systemInstruction: systemPrompt,
         maxOutputTokens: 2048,
         temperature: 0.4,
       },
       contents: geminiContents,
-    });
+    };
 
-    const reply: string =
-      response.text ?? "Lo siento, no he podido procesar tu consulta. Inténtalo de nuevo.";
+    let response;
+    const FALLBACK_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash"];
+    try {
+      response = await ai.models.generateContent({ model: "gemini-2.5-flash", ...geminiConfig });
+    } catch (primaryErr) {
+      const msg = primaryErr instanceof Error ? primaryErr.message : String(primaryErr);
+      const isTransient = msg.includes("503") || msg.includes("UNAVAILABLE") || msg.includes("overloaded") || msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED");
+      if (isTransient) {
+        let lastErr = primaryErr;
+        for (const fallback of FALLBACK_MODELS) {
+          try {
+            console.warn(`[CHAT] gemini-2.5-flash no disponible, probando ${fallback}`);
+            response = await ai.models.generateContent({ model: fallback, ...geminiConfig });
+            break;
+          } catch (fallbackErr) {
+            lastErr = fallbackErr;
+          }
+        }
+        if (!response) throw lastErr;
+      } else {
+        throw primaryErr;
+      }
+    }
+
+    let reply: string;
+    try {
+      reply = response.text ?? "Lo siento, no he podido procesar tu consulta. Inténtalo de nuevo.";
+    } catch {
+      // response.text lanza si la respuesta fue bloqueada o filtrada por seguridad
+      reply = "Lo siento, no puedo responder a esa pregunta en este momento. Inténtalo de nuevo o reformula tu consulta.";
+    }
 
     const existingConversation = await prisma.conversation.findFirst({
       where: { sessionId, propertyId },
+      select: { id: true, messages: true, isLocked: true },
     });
 
     const allMessages: ChatMessage[] = [
@@ -259,10 +307,20 @@ export async function POST(req: NextRequest) {
       { role: "assistant", content: reply },
     ];
 
+    // Retención referenciada: expiresAt se recalcula en cada mensaje (referenciado a la última actividad)
+    // host_test → 24 h | guest → 60 días desde el último mensaje
+    const convType = isHostTest ? "host_test" : "guest";
+    const retentionDays = isHostTest ? 1 : 60;
+    const expiresAt = new Date(Date.now() + retentionDays * 24 * 60 * 60 * 1000);
+
     if (existingConversation) {
+      // Solo actualizar expiresAt si la conversación no está bloqueada (incidencia)
       await prisma.conversation.update({
         where: { id: existingConversation.id },
-        data: { messages: JSON.stringify(allMessages) },
+        data: {
+          messages: JSON.stringify(allMessages),
+          ...(!existingConversation.isLocked && { expiresAt }),
+        },
       });
     } else {
       await prisma.conversation.create({
@@ -270,11 +328,15 @@ export async function POST(req: NextRequest) {
           propertyId,
           sessionId,
           messages: JSON.stringify(allMessages),
+          type: convType,
+          expiresAt,
         },
       });
     }
 
-    return NextResponse.json({ reply, sessionId });
+    const finalUserCount = allMessages.filter((m) => m.role === "user").length;
+    const remaining = isHostTest ? null : Math.max(0, 20 - finalUserCount);
+    return NextResponse.json({ reply, sessionId, remaining });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("[CHAT API]", msg);

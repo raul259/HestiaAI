@@ -91,11 +91,16 @@ model IncidentNote {
 }
 
 model Conversation {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   propertyId String
   sessionId  String
   messages   String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  type       String    @default("guest") // "guest" | "host_test"
+  isLocked   Boolean   @default(false)   // true = protegida contra limpieza automática (incidencias)
+  expiresAt  DateTime?                   // null = sin expiración automática
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  property   Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
 }
