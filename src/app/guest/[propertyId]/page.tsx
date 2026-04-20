@@ -12,14 +12,13 @@ function generateSessionId() {
   return `session_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
-const SESSION_KEY = "hestia_session_id";
-
-function getOrCreateSession(): string {
+function getOrCreateSession(propertyId: string): string {
   if (typeof window === "undefined") return generateSessionId();
-  const stored = sessionStorage.getItem(SESSION_KEY);
+  const key = `hestia_session_${propertyId}`;
+  const stored = localStorage.getItem(key);
   if (stored) return stored;
   const newId = generateSessionId();
-  sessionStorage.setItem(SESSION_KEY, newId);
+  localStorage.setItem(key, newId);
   return newId;
 }
 
@@ -32,7 +31,7 @@ export default function GuestPage({
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
   const [showIncident, setShowIncident] = useState(false);
-  const [sessionId] = useState(getOrCreateSession);
+  const [sessionId] = useState(() => getOrCreateSession(propertyId));
   const [selectedAppliance, setSelectedAppliance] = useState<Appliance | null>(null);
   const [incidentCreatedTrigger, setIncidentCreatedTrigger] = useState(0);
   const [showIncidentsPanel, setShowIncidentsPanel] = useState(false);
