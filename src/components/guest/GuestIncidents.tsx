@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Clock, Wrench, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Clock, Wrench, CheckCircle2, XCircle, AlertCircle, MessageSquare } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; bg: string; text: string }> = {
@@ -32,6 +32,12 @@ const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; bg: 
   },
 };
 
+interface IncidentNote {
+  id: string;
+  content: string;
+  createdAt: string;
+}
+
 interface IncidentRow {
   id: string;
   title: string;
@@ -39,6 +45,7 @@ interface IncidentRow {
   status: string;
   priority: string;
   createdAt: string;
+  notes: IncidentNote[];
 }
 
 interface Props {
@@ -169,6 +176,21 @@ export default function GuestIncidents({ propertyId }: Props) {
             <p className="font-inter text-xs text-gray-500 leading-relaxed line-clamp-2">
               {incident.description}
             </p>
+
+            {incident.notes?.length > 0 && (
+              <div className="space-y-2 pt-2 border-t border-gray-100">
+                <div className="flex items-center gap-1.5 text-xs text-deep-forest font-medium">
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  Respuesta del anfitrión
+                </div>
+                {incident.notes.map((note) => (
+                  <div key={note.id} className="bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+                    <p className="text-xs text-emerald-900 leading-relaxed">{note.content}</p>
+                    <p className="text-[10px] text-emerald-600 mt-1">{formatDate(note.createdAt)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
       })}

@@ -59,7 +59,14 @@ export async function GET(req: NextRequest) {
 
     const incidents = await prisma.incident.findMany({
       where,
-      include: { property: { select: { name: true } } },
+      include: {
+        property: { select: { name: true } },
+        notes: {
+          where: { type: "reply" },
+          orderBy: { createdAt: "asc" },
+          select: { id: true, content: true, createdAt: true },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(incidents);
