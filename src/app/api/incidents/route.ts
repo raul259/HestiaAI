@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
       priority,
       guestName,
       guestEmail,
+      photoUrl,
       scheduledAt,
     } = body;
 
@@ -111,6 +112,7 @@ export async function POST(req: NextRequest) {
         priority: finalPriority,
         guestName,
         guestEmail,
+        photoUrl,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
       },
     });

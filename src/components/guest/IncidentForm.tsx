@@ -30,6 +30,7 @@ export default function IncidentForm({ propertyId, sessionId, onClose, onInciden
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const photoRef = useRef<HTMLInputElement>(null);
 
@@ -40,10 +41,12 @@ export default function IncidentForm({ propertyId, sessionId, onClose, onInciden
     setAnalyzing(true);
     const data = new FormData();
     data.append("photo", file);
+    data.append("propertyId", propertyId);
     try {
       const res = await fetch("/api/analyze-photo", { method: "POST", body: data });
       const json = await res.json();
       if (json.description) setForm((prev) => ({ ...prev, description: json.description }));
+      if (json.photoUrl) setPhotoUrl(json.photoUrl);
     } catch {
       // ignore analysis errors
     } finally {
@@ -66,7 +69,7 @@ export default function IncidentForm({ propertyId, sessionId, onClose, onInciden
       const res = await fetch("/api/incidents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, propertyId, ...(sessionId && { sessionId }) }),
+        body: JSON.stringify({ ...form, propertyId, ...(photoUrl && { photoUrl }), ...(sessionId && { sessionId }) }),
       });
 
       if (res.ok) {

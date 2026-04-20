@@ -21,6 +21,7 @@ interface IncidentRow {
   priority: string;
   guestName?: string | null;
   guestEmail?: string | null;
+  photoUrl?: string | null;
   scheduledAt?: Date | null;
   createdAt: Date;
   property: { name: string };
@@ -297,7 +298,19 @@ export default function IncidentList({ incidents: initial }: Props) {
           </div>
 
           {expanded === incident.id && (
-            <IncidentNotes incidentId={incident.id} guestEmail={incident.guestEmail} />
+            <>
+              {incident.photoUrl && (
+                <div className="mt-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={incident.photoUrl}
+                    alt="Foto del daño"
+                    className="w-full max-h-56 object-cover rounded-xl border border-gray-200"
+                  />
+                </div>
+              )}
+              <IncidentNotes incidentId={incident.id} guestEmail={incident.guestEmail} />
+            </>
           )}
         </div>
       ))}

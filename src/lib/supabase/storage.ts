@@ -31,3 +31,24 @@ export function getGLBPublicUrl(propertyId: string, applianceId: string): string
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
 }
+
+const INCIDENT_PHOTOS_BUCKET = "incident-photos";
+
+export async function uploadIncidentPhoto(
+  propertyId: string,
+  photoBuffer: Buffer,
+  mimeType: string
+): Promise<string> {
+  const supabase = getServiceClient();
+  const ext = mimeType.includes("png") ? "png" : mimeType.includes("gif") ? "gif" : "jpg";
+  const path = `${propertyId}/${Date.now()}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from(INCIDENT_PHOTOS_BUCKET)
+    .upload(path, photoBuffer, { contentType: mimeType, upsert: false });
+
+  if (error) throw new Error(error.message);
+
+  const { data } = supabase.storage.from(INCIDENT_PHOTOS_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
