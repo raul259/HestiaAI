@@ -425,8 +425,8 @@ export default function ChatInterface({
             {historyLoaded && remaining !== null && (
               !chatStarted ? (
                 <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl">
-                  <span className="text-[10px] font-inter text-gray-400">
-                    Dispones de <strong className="text-gray-600">{DAILY_LIMIT} preguntas</strong> diarias para este asistente.
+                  <span className="text-[11px] font-inter font-bold text-deep-forest">
+                    Dispones de {DAILY_LIMIT} preguntas diarias para este asistente.
                   </span>
                 </div>
               ) : remaining <= 5 && remaining > 0 ? (
@@ -470,7 +470,7 @@ export default function ChatInterface({
             {/* Contador compacto junto al input — visible cuando el chat está activo */}
             {chatStarted && remaining !== null && remaining > 5 && (
               <div className="flex justify-end">
-                <span className="text-[10px] font-inter text-gray-400">
+                <span className="text-[11px] font-inter font-bold text-deep-forest">
                   {remaining}/{DAILY_LIMIT} preguntas restantes hoy
                 </span>
               </div>
