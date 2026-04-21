@@ -42,9 +42,7 @@ export default function HowItWorks() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-          <div className="hidden md:block absolute top-16 left-1/3 right-1/3 h-0.5 bg-electric-mint/30" />
-
-          {steps.map((step, i) => (
+{steps.map((step, i) => (
             <div key={i} className="relative flex flex-col items-center text-center">
               <div className="relative z-10 w-16 h-16 bg-electric-mint rounded-2xl flex items-center justify-center text-deep-forest mb-6 shadow-lg shadow-electric-mint/30">
                 {step.icon}

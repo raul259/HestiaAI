@@ -3,7 +3,7 @@ import Link from "next/link";
 import Navbar from "@/components/landing/Navbar";
 import Features from "@/components/landing/Features";
 import HowItWorks from "@/components/landing/HowItWorks";
-import { ArrowRight, Star, Users, TrendingUp } from "lucide-react";
+import { ArrowRight, Star, Users, TrendingUp, Leaf, Handshake, ClipboardList } from "lucide-react";
 
 const HeroScene = dynamic(() => import("@/components/landing/HeroScene"), {
   ssr: false,
@@ -13,9 +13,9 @@ const HeroScene = dynamic(() => import("@/components/landing/HeroScene"), {
 });
 
 const stats = [
-  { value: "24/7", label: "Disponibilidad", icon: <Star className="w-4 h-4" /> },
-  { value: "<3s", label: "Tiempo de respuesta", icon: <TrendingUp className="w-4 h-4" /> },
-  { value: "100%", label: "Consultas atendidas", icon: <Users className="w-4 h-4" /> },
+  { value: "24/7", label: "Disponibilidad", icon: <Star className="w-12 h-12" /> },
+  { value: "<3s", label: "Tiempo de respuesta", icon: <TrendingUp className="w-12 h-12" /> },
+  { value: "100%", label: "Consultas atendidas", icon: <Users className="w-12 h-12" /> },
 ];
 
 export default function HomePage() {
@@ -62,17 +62,17 @@ export default function HomePage() {
               </Link>
             </div>
 
-            <div className="flex flex-wrap gap-8 justify-center pt-4">
+            <div className="flex flex-wrap gap-12 justify-center pt-8">
               {stats.map((stat, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-electric-mint/15 rounded-lg flex items-center justify-center text-electric-mint">
+                <div key={i} className="flex flex-col items-center gap-3">
+                  <div className="w-20 h-20 bg-electric-mint/15 rounded-2xl flex items-center justify-center text-electric-mint">
                     {stat.icon}
                   </div>
-                  <div className="text-left">
-                    <div className="font-outfit font-bold text-xl text-off-white">
+                  <div className="text-center">
+                    <div className="font-outfit font-bold text-4xl text-off-white">
                       {stat.value}
                     </div>
-                    <div className="font-inter text-xs text-white/50">
+                    <div className="font-inter text-sm text-white/60">
                       {stat.label}
                     </div>
                   </div>
@@ -105,18 +105,20 @@ export default function HomePage() {
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
               {[
-                { icon: "🌱", title: "Impacto Ambiental", desc: "Menos visitas técnicas innecesarias = menos huella de carbono." },
-                { icon: "🤝", title: "Impacto Social", desc: "Accesibilidad para huéspedes de cualquier idioma o capacidad digital." },
-                { icon: "📋", title: "Gobernanza", desc: "Registro de incidencias trazable para mejora continua del alojamiento." },
+                { icon: <Leaf className="w-7 h-7" />, title: "Impacto Ambiental", desc: "Menos visitas técnicas innecesarias = menos huella de carbono." },
+                { icon: <Handshake className="w-7 h-7" />, title: "Impacto Social", desc: "Accesibilidad para huéspedes de cualquier idioma o capacidad digital." },
+                { icon: <ClipboardList className="w-7 h-7" />, title: "Gobernanza", desc: "Registro de incidencias trazable para mejora continua del alojamiento." },
               ].map((item, i) => (
                 <div key={i} className="card text-center hover:shadow-md transition-shadow">
-                  <div className="text-4xl mb-3">{item.icon}</div>
+                  <div className="w-14 h-14 bg-electric-mint/15 rounded-xl flex items-center justify-center text-deep-forest mx-auto mb-4">
+                    {item.icon}
+                  </div>
                   <h4 className="font-outfit font-semibold text-deep-forest mb-2">{item.title}</h4>
                   <p className="font-inter text-sm text-slate-body">{item.desc}</p>
                 </div>
               ))}
             </div>
-            <Link href="/guest/demo" className="btn-primary inline-flex items-center gap-2">
+            <Link href="/auth/register" className="btn-primary inline-flex items-center gap-2">
               Comenzar ahora
               <ArrowRight className="w-4 h-4" />
             </Link>

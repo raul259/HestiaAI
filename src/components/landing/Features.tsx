@@ -51,9 +51,9 @@ export default function Features() {
           {features.map((feature, i) => (
             <div
               key={i}
-              className="card hover:shadow-md transition-all duration-300 hover:-translate-y-1 group"
+              className="card text-center hover:shadow-md transition-all duration-300 hover:-translate-y-1 group"
             >
-              <div className="w-12 h-12 bg-electric-mint/15 rounded-xl flex items-center justify-center mb-4 text-deep-forest group-hover:bg-electric-mint group-hover:text-deep-forest transition-colors duration-300">
+              <div className="w-12 h-12 bg-electric-mint/15 rounded-xl flex items-center justify-center mb-4 text-deep-forest group-hover:bg-electric-mint group-hover:text-deep-forest transition-colors duration-300 mx-auto">
                 {feature.icon}
               </div>
               <h3 className="font-outfit font-semibold text-lg text-deep-forest mb-2">
