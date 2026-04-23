@@ -181,6 +181,19 @@ export default function HeroScene() {
     let hoveredMesh: THREE.Mesh | null = null;
 
     const handleMouseMove = (e: MouseEvent) => {
+      // Don't show tooltips when the cursor is over UI elements layered above the canvas
+      const topElement = document.elementFromPoint(e.clientX, e.clientY);
+      if (!mount.contains(topElement)) {
+        if (hoveredMesh) {
+          const mat = hoveredMesh.material as THREE.MeshPhongMaterial;
+          mat.emissive.setHex(hoveredMesh.userData.origEmissive ?? 0x000000);
+          mat.emissiveIntensity = hoveredMesh.userData.origEmissiveIntensity ?? 0;
+          hoveredMesh = null;
+        }
+        tooltipEl.style.opacity = "0";
+        return;
+      }
+
       const rect = mount.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;

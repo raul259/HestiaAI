@@ -128,7 +128,7 @@ export default function LoginPage() {
                 setError("");
                 const supabase = createClient();
                 await supabase.auth.resetPasswordForEmail(email, {
-                  redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/host/reset-password`,
+                  redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/host/reset-password`,
                 });
                 setInfo("Te hemos enviado un enlace de recuperación. Revisa tu correo.");
               }}
