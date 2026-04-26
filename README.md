@@ -1,116 +1,91 @@
 # HestiaAI 🏠
 
-> Asistente virtual con inteligencia artificial para huéspedes de alojamientos vacacionales
+> Asistente inteligente para huéspedes de alojamientos turísticos
 
 ---
 
-## 📖 ¿De qué va el proyecto?
+## ¿De qué va el proyecto?
 
 ¿Alguna vez has alquilado un piso turístico y no sabías cómo funcionaba el aire acondicionado? ¿O has sido anfitrión y te han llamado a las 2 de la mañana para preguntar la contraseña del WiFi?
 
 **Ese es exactamente el problema que resuelve HestiaAI.**
 
-La idea es simple: el anfitrión configura su piso una sola vez, sube los manuales de los electrodomésticos, y el sistema genera un código QR. El huésped lo escanea al entrar y tiene acceso a un chat que responde cualquier pregunta sobre el alojamiento, las 24 horas, en el idioma que quiera.
+El anfitrión configura su propiedad una sola vez, sube los manuales de los electrodomésticos, y el sistema genera un código QR. El huésped lo escanea al llegar y tiene acceso a un chat que responde cualquier pregunta sobre el alojamiento, las 24 horas. No hace falta registrarse ni instalar ninguna app.
 
-Y si hay algún problema real (una avería, por ejemplo), el huésped puede reportarlo directamente desde la misma app. El anfitrión recibe un email con todos los detalles y puede gestionar todo desde su panel.
+Si hay un problema real (una avería, por ejemplo), el huésped puede reportarlo directamente desde la misma pantalla. El anfitrión recibe un email con todos los detalles y gestiona todo desde su panel.
 
-El nombre viene de **Hestia**, la diosa griega del hogar y el fuego del hogar. Me pareció que pegaba bastante.
-
----
-
-## 🎯 ¿Qué queríamos conseguir?
-
-Cuando empecé el proyecto  marqué unos objetivos claros:
-
-- Que el anfitrión **reciba menos interrupciones** — nada de llamadas por tonterías a deshoras
-- Que el huésped **tenga toda la información al momento**, sin esperar que le contesten
-- Que toda la gestión (propiedades, averías, electrodomésticos) esté **en un solo sitio**
-- Que las comunicaciones sean **automáticas** — email al anfitrión cuando hay una incidencia, email al huésped cuando se resuelve
-- Que el huésped pueda **ver el estado de su incidencia en tiempo real**, sin necesidad de crearse una cuenta
-- Que el sistema funcione para **varios pisos a la vez** desde una sola cuenta de anfitrión
+El nombre viene de **Hestia**, la diosa griega del hogar.
 
 ---
 
-## 🌐 ¿Qué tecnologías usamos?
+## ¿Qué puede hacer la aplicación?
 
-Intenté elegir herramientas modernas pero que tuvieran sentido para el tamaño del proyecto:
+### Panel del anfitrión
 
-| Qué | Con qué | Por qué lo elegí |
+- **Dashboard** con resumen de propiedades, incidencias abiertas y electrodomésticos registrados
+- **Gestión de propiedades** — crear, editar y eliminar con confirmación. Campos con límite de caracteres para evitar errores
+- **Editar una propiedad** directamente desde su página de detalle
+- **Electrodomésticos por categoría** — con manual en PDF que se lee automáticamente y se guarda para que la IA lo use
+- **Modelos 3D interactivos** — el anfitrión puede subir un archivo `.glb` de cada electrodoméstico y añadir puntos de interés con etiquetas sobre el modelo
+- **QR descargable** por propiedad para imprimir y colocar en el alojamiento
+- **Panel de incidencias en tiempo real** — cuando un huésped reporta algo aparece al momento sin recargar la página, con indicador de nueva incidencia
+- **Gestión de incidencias** — cambiar estado (pendiente → en proceso → resuelta), añadir notas internas y borrarlas
+- **Aviso de inactividad** — las propiedades sin actividad de huéspedes en más de 15 días muestran un badge de alerta en la tarjeta
+
+### Vista del huésped
+
+El huésped accede escaneando el QR, sin cuenta ni instalación:
+
+- **Chat con IA** — responde preguntas usando la información exacta de ese alojamiento. Si el anfitrión subió el manual del aire acondicionado, la IA sabe cómo funciona ese modelo concreto. Cuando hay un modelo 3D disponible, la IA sugiere abrirlo
+- **Visor 3D** — puede explorar el electrodoméstico en tres dimensiones y ver los puntos de interés marcados por el anfitrión
+- **Números de emergencia** — la IA siempre proporciona el contacto del anfitrión y los números nacionales (112, 061, 091, 092, 080) cuando se le pregunta
+- **Límite de 20 mensajes por sesión** — para un uso responsable del servicio
+- **Reportar incidencias** — con descripción, urgencia y franja horaria para el técnico
+- **Seguimiento de incidencias** — el huésped puede ver el estado de lo que ha reportado, actualizado en tiempo real
+
+### Estado automático de la propiedad
+
+Cuando un huésped abre el QR por primera vez, la propiedad pasa automáticamente de "Disponible" a "Con huésped" en el panel del anfitrión, sin que nadie tenga que hacer nada.
+
+### Emails automáticos
+
+- Nueva incidencia → el anfitrión recibe un email con todos los detalles
+- Incidencia resuelta → el huésped recibe confirmación (si dejó su correo)
+
+---
+
+## Tecnologías utilizadas
+
+| Qué | Con qué | Por qué |
 |---|---|---|
-| La web completa | Next.js 14 | Me permite tener el frontend y el backend en un solo proyecto |
-| El diseño | Tailwind CSS | Rápido de usar, queda bien sin mucho esfuerzo |
-| La base de datos | PostgreSQL en Supabase | Gratuita, en la nube, con autenticación incluida |
-| Acceso a los datos | Prisma | Evita errores, las migraciones son muy fáciles |
-| La inteligencia artificial | Google Gemini 2.5 Flash | Contexto enorme, capa gratuita generosa, responde en cualquier idioma |
-| El login de anfitriones | Supabase Auth | No tuve que implementar nada de seguridad.|
-| Los emails | Resend | Tres líneas de código y funciona |
-| Los códigos QR | librería qrcode | Genera el QR directamente en el navegador, descargable como PNG |
-| Leer manuales PDF | librería pdf-parse | Extrae el texto automáticamente del PDF |
+| Web completa | Next.js 14 | Frontend y backend en un solo proyecto |
+| Diseño | Tailwind CSS | Rápido y consistente |
+| Base de datos | PostgreSQL en Supabase | Gratuita, en la nube, con autenticación incluida |
+| Acceso a datos | Prisma ORM | Migraciones sencillas y sin errores de tipos |
+| Inteligencia artificial | Google Gemini Flash 2.0 | Contexto amplio, capa gratuita generosa, responde en cualquier idioma |
+| Búsqueda semántica | RAG con text-embedding-004 | Solo los fragmentos de manual más relevantes llegan a la IA |
+| Almacenamiento de archivos | Supabase Storage + Signed URLs | Los archivos grandes (modelos 3D) se suben directamente desde el navegador sin pasar por el servidor |
+| Login de anfitriones | Supabase Auth | Autenticación lista sin implementarla desde cero |
+| Emails | Resend | Simple y fiable |
+| Códigos QR | librería qrcode | Genera el QR en el navegador, descargable como PNG |
+| Lectura de PDFs | pdf-parse | Extrae el texto del manual automáticamente |
+| Visor 3D | Three.js | Renderizado de modelos GLB con puntos de interés interactivos |
 | Notificaciones en vivo | Supabase Realtime | Las incidencias aparecen en el panel sin recargar |
-| La animación 3D de inicio | Three.js | Le da personalidad a la página de entrada |
-| El lenguaje | TypeScript | Menos bugs, el editor te avisa de los errores |
+| Lenguaje | TypeScript | Menos bugs, errores detectados antes de ejecutar |
 
 ---
 
-## 🔗 ¿Qué puede hacer la aplicación?
+## Cómo funciona la IA por dentro
 
-### Lo que ve el anfitrión
+El sistema usa una técnica llamada **RAG** (Retrieval-Augmented Generation). En vez de enviar el manual completo a la IA en cada pregunta — lo que sería lento y caro — el manual se divide en fragmentos de 1.000 caracteres y cada uno se convierte en un vector numérico de 768 dimensiones (su "huella semántica").
 
-Cuando el anfitrión inicia sesión accede a su panel donde puede:
+Cuando el huésped hace una pregunta, se calcula la similitud entre esa pregunta y todos los fragmentos almacenados. Solo los 5 más relevantes se envían a Gemini junto con la pregunta. Resultado: respuestas más precisas, coste 30 veces menor y tiempo de respuesta menor a 2 segundos.
 
-- Ver de un vistazo cuántas propiedades tiene, cuántas incidencias están abiertas y cuántos electrodomésticos tiene registrados
-- **Gestionar sus propiedades** — crear, editar o borrar pisos con toda su información (WiFi, instrucciones de salida, contacto de emergencias...)
-- **Añadir electrodomésticos** por categoría y subir el manual en PDF — el texto se extrae solo y se guarda para que la IA lo use
-- **Descargar el QR** de cada propiedad para imprimirlo y colgarlo en el piso
-- **Ver las incidencias en tiempo real** — cuando un huésped reporta algo, aparece en el panel al momento con un borde verde y el aviso "Nueva incidencia", sin recargar la página
-- **Cambiar el estado** de cada incidencia (pendiente → en proceso → resuelta) y borrarlas cuando ya no las necesite
-
-### Lo que ve el huésped
-
-El huésped accede escaneando el QR, sin registrarse ni instalar nada:
-
-- **Chat con IA** — pregunta lo que quiera sobre el piso y recibe respuestas usando la información exacta de ese alojamiento. Si el anfitrión subió el manual del aire acondicionado, el chat sabe cómo funciona ese modelo concreto
-- **Reportar una incidencia** — puede describir el problema, indicar la urgencia y proponer una franja horaria para que acuda un técnico. También puede dejar su email para recibir actualizaciones
-- **Ver el estado de sus incidencias** — hay un tab "Mis incidencias" donde aparecen todas las que ha reportado en ese dispositivo, con su estado actualizado en tiempo real. Cuando el anfitrión la marca como resuelta, la tarjeta se pone en verde
-
-### Los emails automáticos
-
-- Cuando el huésped reporta una incidencia → el anfitrión recibe un email con todos los detalles
-- Cuando el anfitrión resuelve la incidencia → el huésped recibe un email de confirmación (si dejó su correo)
+Los vectores se generan en paralelo (lotes de 10 simultáneos), lo que hace el proceso de indexación 10 veces más rápido que hacerlo uno a uno.
 
 ---
 
-## 📅 Roadmap
-
-### Lo que ya está hecho ✅
-
-- Toda la base del proyecto (estructura, base de datos, diseño)
-- Login y registro de anfitriones
-- Gestión completa de propiedades y electrodomésticos
-- Chat con IA contextualizado por propiedad
-- Subida y lectura automática de manuales PDF
-- Formulario de incidencias con cita para técnico
-- Emails automáticos al anfitrión y al huésped
-- Generación de QR descargable por propiedad
-- Dashboard en tiempo real con Supabase Realtime
-- Tab de seguimiento de incidencias para el huésped
-- **Arquitectura RAG** — embeddings semánticos con `text-embedding-004` para recuperar solo los fragmentos de manual más relevantes en cada consulta
-
-### Lo que queda por hacer ⏳
-
-| Tarea | Fecha |
-|---|---|
-| Mejorar la animación 3D de la landing (Three.js) | 12/04/2026 |
-| Migrar embeddings a base de datos vectorial ([Weaviate](https://weaviate.io)) para escalar a millones de documentos | Futuro |
-| Dashboard de métricas y sostenibilidad (ESG) | 26/04/2026 |
-| Despliegue en producción (Vercel) | Antes del 02/05 |
-| Grabar el vídeo demo | 02/05/2026 |
-| **Presentación al tribunal** | **04/05/2026** |
-| **Entrega final** | **11/05/2026** |
-
----
-
-## ⚙️ Cómo probarlo en local
+## Cómo probarlo en local
 
 ```bash
 # Clonar el proyecto
@@ -131,3 +106,13 @@ npm run dev
 ```
 
 Abre [http://localhost:3000](http://localhost:3000) — te redirige al login automáticamente.
+
+---
+
+## Fechas clave
+
+| Hito | Fecha |
+|---|---|
+| Vídeo demo | 02/05/2026 |
+| Presentación al tribunal | 04/05/2026 |
+| Entrega final | 11/05/2026 |
