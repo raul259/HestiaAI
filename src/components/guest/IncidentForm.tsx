@@ -45,8 +45,13 @@ export default function IncidentForm({ propertyId, sessionId, onClose, onInciden
     try {
       const res = await fetch("/api/analyze-photo", { method: "POST", body: data });
       const json = await res.json();
-      if (json.description) setForm((prev) => ({ ...prev, description: json.description }));
-      if (json.photoUrl) setPhotoUrl(json.photoUrl);
+      if (!res.ok) {
+        setPhotoPreview(null);
+        setError(json.error || "No se pudo procesar la imagen.");
+      } else {
+        if (json.description) setForm((prev) => ({ ...prev, description: json.description }));
+        if (json.photoUrl) setPhotoUrl(json.photoUrl);
+      }
     } catch {
       // ignore analysis errors
     } finally {
