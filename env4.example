@@ -1,0 +1,19 @@
+# =====================================================
+# VARIABLES DE ENTORNO - EJEMPLO
+# Copia este archivo como .env y rellena los valores reales
+# NUNCA subas el .env real a GitHub (ya está en .gitignore)
+# =====================================================
+
+# --- PostgreSQL ---
+POSTGRES_DB=mi_proyecto_db
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=cambia_esta_password_segura
+
+# --- Supabase (si usas Supabase Cloud) ---
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key_aqui
+SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key_aqui
+
+# --- pgAdmin (interfaz visual de la BD) ---
+PGADMIN_EMAIL=admin@admin.com
+PGADMIN_PASSWORD=admin123

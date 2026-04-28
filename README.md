@@ -116,3 +116,57 @@ Abre [http://localhost:3000](http://localhost:3000) — te redirige al login aut
 | Vídeo demo | 02/05/2026 |
 | Presentación al tribunal | 04/05/2026 |
 | Entrega final | 11/05/2026 |
+
+---
+
+## 🐳 Despliegue con Docker
+
+Puedes levantar toda la aplicación con un solo comando usando Docker Compose.
+
+### Requisitos previos
+
+- [Docker](https://docs.docker.com/get-docker/) (v20+)
+- [Docker Compose](https://docs.docker.com/compose/install/) (v2+)
+
+### Despliegue rápido
+
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/raul2529/HestiaAI.git
+cd HestiaAI
+
+# 2. Configurar variables de entorno
+cp .env.example .env
+# Edita el .env con tus claves reales (Supabase, Gemini, Resend...)
+
+# 3. Levantar todos los servicios
+docker-compose up -d
+```
+
+La aplicación estará disponible en:
+
+| Servicio | URL |
+|----------|-----|
+| 🌐 Aplicación web | http://localhost:3000 |
+| 🗄️ pgAdmin (gestor BD) | http://localhost:8080 |
+
+### Comandos útiles
+
+```bash
+# Ver contenedores activos
+docker-compose ps
+
+# Ver logs en tiempo real
+docker-compose logs -f app
+
+# Detener todos los servicios
+docker-compose down
+```
+
+### Imagen en Docker Hub
+
+```bash
+docker pull raul2529/hestia-docker:v1
+```
+
+🔗 [https://hub.docker.com/r/raul2529/hestia-docker](https://hub.docker.com/r/raul2529/hestia-docker)

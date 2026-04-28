@@ -67,6 +67,7 @@ export async function PATCH(req: NextRequest) {
     );
 
     return NextResponse.json(appliance);
+    
   } catch (error) {
     console.error("[APPLIANCES PATCH]", error);
     return NextResponse.json({ error: "Error al actualizar manual." }, { status: 500 });

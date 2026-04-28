@@ -1,0 +1,91 @@
+version: "3.9"
+
+# =====================================================
+# REDES
+# =====================================================
+networks:
+  app-network:
+    driver: bridge
+
+# =====================================================
+# VOLÚMENES persistentes
+# =====================================================
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+# =====================================================
+# SERVICIOS
+# =====================================================
+services:
+
+  # ---------------------------------------------------
+  # BASE DE DATOS: PostgreSQL
+  # ---------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: proyecto_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mi_proyecto_db}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-supersecretpassword}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Si tienes un backup SQL, descomenta la siguiente línea:
+      # - ./database/backup.sql:/docker-entrypoint-initdb.d/backup.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-mi_proyecto_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------
+  # APLICACIÓN: Next.js (imagen creada con el Dockerfile)
+  # ---------------------------------------------------
+  app:
+    image: raul2529/hestia-docker:v1
+    # Si quieres construir localmente en lugar de usar la imagen del hub:
+    # build:
+    #   context: ./nombre-carpeta-proyecto
+    #   dockerfile: Dockerfile
+    container_name: proyecto_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      # Supabase (si usas Supabase cloud, pon tus variables reales en .env)
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      # Conexión directa a la base de datos local (si la usas como alternativa)
+      DATABASE_URL: postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-supersecretpassword}@db:5432/${POSTGRES_DB:-mi_proyecto_db}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # ---------------------------------------------------
+  # OPCIONAL: pgAdmin para gestionar la BD visualmente
+  # ---------------------------------------------------
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: proyecto_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+    ports:
+      - "8080:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - db
+    networks:
+      - app-network
